@@ -31,8 +31,10 @@ export namespace Core {
       dest: RegisterID
     };
     export const factory = {
-      add: (left: RegisterID, right: RegisterID, dest: RegisterID) => ({ type: 'core.math.add', left, right, dest }) as const,
-      multiply: (left: RegisterID, right: RegisterID, dest: RegisterID) => ({ type: 'core.math.multiply', left, right, dest }) as const,
+      add: (left: RegisterID, right: RegisterID, dest: RegisterID) =>
+        ({ type: 'core.math.add', left, right, dest }) as const,
+      multiply: (left: RegisterID, right: RegisterID, dest: RegisterID) =>
+        ({ type: 'core.math.multiply', left, right, dest }) as const,
     }
   }
 
@@ -50,8 +52,10 @@ export namespace Core {
       value: RegisterID,
     }
     export const factory = {
-      read: (addr: RegisterID, dest: RegisterID) => ({ type: 'core.memory.read', addr, dest }) as const,
-      write: (addr: RegisterID, value: RegisterID) => ({ type: 'core.memory.write', addr, value }) as const,
+      read: (addr: RegisterID, dest: RegisterID) =>
+        ({ type: 'core.memory.read', addr, dest }) as const,
+      write: (addr: RegisterID, value: RegisterID) =>
+        ({ type: 'core.memory.write', addr, value }) as const,
     }
   }
 
@@ -64,7 +68,8 @@ export namespace Core {
       dest: RegisterID
     };
     export const factory = {
-      put: (value: Word, dest: RegisterID) => ({ type: 'core.register.put', value, dest }) as const,
+      put: (value: Word, dest: RegisterID) =>
+        ({ type: 'core.register.put', value, dest }) as const,
     }
   }
   export namespace Control {
@@ -76,7 +81,8 @@ export namespace Core {
       address: RegisterID
     };
     export const factory = {
-      conditional_jump: (test: RegisterID, address: RegisterID) => ({ type: 'core.control.conditional_jump', test, address }) as const,
+      conditional_jump: (test: RegisterID, address: RegisterID) =>
+        ({ type: 'core.control.conditional_jump', test, address }) as const,
     }
   }
   export namespace System {
@@ -149,7 +155,8 @@ export namespace Core {
             dest: toRegisterId(bytes[address + 2]),
           }
         case 'core.system.halt':
-          return { type };
+        case 'core.system.call':
+          return { type } as Any;
         default:
           throw new Error(`Unknown instruction: ${type}`);
       }

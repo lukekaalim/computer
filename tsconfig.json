@@ -1,5 +1,8 @@
 {
   "compilerOptions": {
-    "strict": true
+    "strict": true,
+    "target": "ES2022",
+    "moduleResolution": "Bundler",
+    "module": "ES2022"
   }
 }
