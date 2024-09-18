@@ -176,6 +176,10 @@ export namespace Core {
           bytes[1] = value.addr;
           bytes[2] = value.dest;
           break;
+        case 'core.memory.write':
+          bytes[1] = value.addr;
+          bytes[2] = value.value;
+          break;
         case 'core.register.put':
           bytes[1] = value.value;
           bytes[2] = value.dest;
@@ -188,7 +192,8 @@ export namespace Core {
           bytes[2] = value.address;
           break;
         default:
-          throw new Error(`Cant write instruction ${value.type}`)
+          const _: never = value;
+          throw new Error(`Cant write instruction ${(value as Any).type}`)
       }
       return bytes;
     }

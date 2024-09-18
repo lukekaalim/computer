@@ -8,14 +8,10 @@ const cpu = createCPU(clock, memory);
 const is = isa.Core.factory;
 
 const program: number[] = [
-  is.put(1, 0),
-  is.put(0, 1),
-
-  ...Array.from({ length: 10 }).map(() => [
-    is.read(1, 2),
-    is.add(0, 1, 1),
-  ]).flat(1),
-
+  is.put(8 * 4, 0),
+  is.put(1337, 1),
+  is.write(0, 1),
+  is.read(0, 2),
   is.halt(),
 ].map(isa.Core.serializer.write).flat(1)
 
@@ -47,13 +43,22 @@ const tick = () => {
   }
 }
 
+const printMemory = (memory: number[]) => {
+  console.table(Array.from({ length: Math.ceil(memory.length / 8) }).map((_, line) => {
+    const slice =  memory.slice(line * 8, (line + 1) * 8);
+    return [
+      slice[0], slice[1], slice[2], slice[3],
+      slice[4], slice[5], slice[6], slice[7],
+    ].map(v => typeof v === 'number' ? v : '~')
+  }));
+}
+
 const stop = () => {
   record();
-  console.table(Array.from({ length: Math.ceil(program.length / 8) }).map((_, line) => {
-    return program.slice(line * 8, (line + 1) * 8)
-  }));
+  printMemory(program);
+  printMemory(memory.contents);
   console.table(states.filter(s => s['state'] === 3 && s['instruction_state'] === 0))
   clearInterval(interval_id);
 }
 
-const interval_id = setInterval(tick, 0);
+const interval_id = setInterval(tick, 1);

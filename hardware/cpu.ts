@@ -18,7 +18,6 @@ export const createCPU = (clock: Clock, memory: Memory) => {
      * 3 = run instruction
      */
     state: createRegister(),
-
     instruction_state: createRegister(),
 
 
@@ -61,17 +60,21 @@ export const createCPU = (clock: Clock, memory: Memory) => {
       case 'core.memory.read': {
         switch (registers.instruction_state.read()) {
           case 0: {
+            // Automatically set instruction state to a non-zero value
+            // (this stops the CPU from advancing to the next instruction)
+            registers.instruction_state.write(1);
+          }
+          case 1: {
             if (memory.registers.mode.read() !== 0)
               break;
 
+            const address = registers.general_purpose[instruction.addr].read();
             memory.registers.mode.write(1);
-            memory.registers.address.write(
-              registers.general_purpose[instruction.addr].read()
-            );
-            registers.instruction_state.write(1);
+            memory.registers.address.write(address);
+            registers.instruction_state.write(2);
             break;
           }
-          case 1: {
+          case 2: {
             if (memory.registers.mode.read() !== 3)
               break;
             memory.registers.mode.write(0)
@@ -81,6 +84,33 @@ export const createCPU = (clock: Clock, memory: Memory) => {
           }
           default:
             throw new Error(`Unexpected Instruction State ${registers.instruction_state.read()}`)
+        }
+        break;
+      }
+      case 'core.memory.write': {
+        switch (registers.instruction_state.read()) {
+          case 0:
+            registers.instruction_state.write(1);
+          case 1:
+            if (memory.registers.mode.read() !== 0)
+              break;
+
+            const address = registers.general_purpose[instruction.addr].read();
+            const value = registers.general_purpose[instruction.value].read();
+            // Start the write
+            memory.registers.mode.write(2);
+            memory.registers.address.write(address);
+            memory.registers.value.write(value);
+
+            registers.instruction_state.write(2);
+            break;
+          case 2:
+            // Write complete
+            if (memory.registers.mode.read() !== 3)
+              break;
+            memory.registers.mode.write(0)
+            registers.instruction_state.write(0);
+            break;
         }
         break;
       }

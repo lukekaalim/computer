@@ -21,11 +21,13 @@ export const createMemory = (clock: Clock, initialMemory: number[] = []) => {
       case 0:
         break;
       case 1:
-        registers.value.write(contents[registers.address.read()]);
+        registers.value.write(contents[registers.address.read()] || 0);
         registers.mode.write(3);
+        break;
       case 2:
         contents[registers.address.read()] = registers.value.read();
         registers.mode.write(3);
+        break;
       case 3:
         break;
     }
