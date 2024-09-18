@@ -1,0 +1,10 @@
+{
+  "workspaces": [
+    "isa",
+    "hardware"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.5.5"
+  }
+}
