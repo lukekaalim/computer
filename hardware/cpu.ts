@@ -11,7 +11,15 @@ export const createCPU = (clock: Clock, memory: Memory) => {
     instruction_address: createRegister(),
     instruction_cache_offset: createRegister(),
 
+    /**
+     * 0 = system idle
+     * 1 = load instruction
+     * 2 = wait for instruction cache
+     * 3 = run instruction
+     */
     state: createRegister(),
+
+    instruction_state: createRegister(),
 
 
     general_purpose: {
@@ -49,6 +57,35 @@ export const createCPU = (clock: Clock, memory: Memory) => {
       case 'core.register.put': {
         registers.general_purpose[instruction.dest].write(instruction.value);
         break;
+      }
+      case 'core.memory.read': {
+        switch (registers.instruction_state.read()) {
+          case 0: {
+            if (memory.registers.mode.read() !== 0)
+              break;
+
+            memory.registers.mode.write(1);
+            memory.registers.address.write(
+              registers.general_purpose[instruction.addr].read()
+            );
+            registers.instruction_state.write(1);
+            break;
+          }
+          case 1: {
+            if (memory.registers.mode.read() !== 3)
+              break;
+            memory.registers.mode.write(0)
+            registers.instruction_state.write(0);
+            registers.general_purpose[instruction.dest].write(memory.registers.value.read());
+            break;
+          }
+          default:
+            throw new Error(`Unexpected Instruction State ${registers.instruction_state.read()}`)
+        }
+        break;
+      }
+      default: {
+        throw new Error(`Unsupported Instruction ${instruction.type}`)
       }
     }
   }
@@ -94,6 +131,8 @@ export const createCPU = (clock: Clock, memory: Memory) => {
         run_instruction(instruction);
 
         if (registers.state.read() === 0)
+          break;
+        if (registers.instruction_state.read() !== 0)
           break;
 
         if (offset === 4) {

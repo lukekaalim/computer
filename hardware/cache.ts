@@ -37,7 +37,7 @@ export const create8Cache = (clock: Clock, memory: Memory) => {
         break;
       }
       case 2: {
-        if (memory.registers.mode.read() === 0) {
+        if (memory.registers.mode.read() === 3) {
           const index = registers.index.read();
           const value = memory.registers.value.read();
           switch (index) {
@@ -62,6 +62,9 @@ export const create8Cache = (clock: Clock, memory: Memory) => {
             registers.state.write(1);
             registers.index.write(index + 1);
           }
+
+          // set memory to idle
+          memory.registers.mode.write(0);
         }
       }
     }

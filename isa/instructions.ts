@@ -4,8 +4,12 @@ import { Word } from "./word";
 const instructions = [
   "core.math.add",
   "core.math.multiply",
+  "core.memory.read",
+  "core.memory.write",
   "core.register.put",
-  "core.system.halt"
+  "core.control.conditional_jump",
+  "core.system.halt",
+  "core.system.call",
 ] as Core.Any["type"][];
 
 export namespace Core {
@@ -31,6 +35,26 @@ export namespace Core {
       multiply: (left: RegisterID, right: RegisterID, dest: RegisterID) => ({ type: 'core.math.multiply', left, right, dest }) as const,
     }
   }
+
+  export namespace Memory {
+    type MemoryPrefix = `${CorePrefix}.memory`;
+
+    export type Read = {
+      type: `${MemoryPrefix}.read`,
+      addr: RegisterID,
+      dest: RegisterID,
+    }
+    export type Write = {
+      type: `${MemoryPrefix}.write`,
+      addr: RegisterID,
+      value: RegisterID,
+    }
+    export const factory = {
+      read: (addr: RegisterID, dest: RegisterID) => ({ type: 'core.memory.read', addr, dest }) as const,
+      write: (addr: RegisterID, value: RegisterID) => ({ type: 'core.memory.write', addr, value }) as const,
+    }
+  }
+
   export namespace Register {
     type RegisterPrefix = `${CorePrefix}.register`;
 
@@ -59,22 +83,31 @@ export namespace Core {
     type SystemPrefix = `${CorePrefix}.system`;
 
     export type Halt = {
-      type: `${SystemPrefix}.halt`
+      type: `${SystemPrefix}.halt`,
     };
+    export type Call = {
+      type: `${SystemPrefix}.call`
+    }
     export const factory = {
       halt: () => ({ type: 'core.system.halt' })  as const,
+      call: () => ({ type: 'core.system.call' })  as const,
     }
   }
 
   export type Any =
     | Math.Add
     | Math.Multiply
+    | Memory.Read
+    | Memory.Write
+    | Control.ConditionalJump
     | Register.Put
     | System.Halt
+    | System.Call
 
   export const factory = {
     ...Math.factory,
     ...System.factory,
+    ...Memory.factory,
     ...Control.factory,
     ...Register.factory,
   }
@@ -84,12 +117,30 @@ export namespace Core {
       const type = instructions[bytes[address]];
       switch (type) {
         case 'core.math.add':
+          return {
+            type,
+            left: toRegisterId(bytes[address + 1]),
+            right: toRegisterId(bytes[address + 2]),
+            dest: toRegisterId(bytes[address + 3])
+          }
         case 'core.math.multiply':
           return {
             type,
             left: toRegisterId(bytes[address + 1]),
             right: toRegisterId(bytes[address + 2]),
             dest: toRegisterId(bytes[address + 3])
+          }
+        case 'core.memory.read':
+          return {
+            type,
+            addr: toRegisterId(bytes[address + 1]),
+            dest: toRegisterId(bytes[address + 2]),
+          }
+        case 'core.memory.write':
+          return {
+            type,
+            addr: toRegisterId(bytes[address + 1]),
+            value: toRegisterId(bytes[address + 2]),
           }
         case 'core.register.put':
           return {
@@ -114,12 +165,23 @@ export namespace Core {
           bytes[2] = value.right;
           bytes[3] = value.dest;
           break;
+        case 'core.memory.read':
+          bytes[1] = value.addr;
+          bytes[2] = value.dest;
+          break;
         case 'core.register.put':
           bytes[1] = value.value;
           bytes[2] = value.dest;
           break;
         case 'core.system.halt':
+        case 'core.system.call':
           break;
+        case 'core.control.conditional_jump':
+          bytes[1] = value.test;
+          bytes[2] = value.address;
+          break;
+        default:
+          throw new Error(`Cant write instruction ${value.type}`)
       }
       return bytes;
     }
