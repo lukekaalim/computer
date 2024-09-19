@@ -10,7 +10,7 @@ const instructions = [
   "core.control.conditional_jump",
   "core.system.halt",
   "core.system.call",
-] as Core.Any["type"][];
+] as Core.Instruction["type"][];
 
 export namespace Core {
   type CorePrefix = "core";
@@ -100,7 +100,7 @@ export namespace Core {
     }
   }
 
-  export type Any =
+  export type Instruction =
     | Math.Add
     | Math.Multiply
     | Memory.Read
@@ -118,7 +118,7 @@ export namespace Core {
     ...Register.factory,
   }
 
-  export const serializer: Serializer<Any> = {
+  export const serializer: Serializer<Instruction> = {
     read(bytes, address) {
       const type = instructions[bytes[address]];
       switch (type) {
@@ -156,7 +156,7 @@ export namespace Core {
           }
         case 'core.system.halt':
         case 'core.system.call':
-          return { type } as Any;
+          return { type } as Instruction;
         default:
           throw new Error(`Unknown instruction: ${type}`);
       }
@@ -193,7 +193,7 @@ export namespace Core {
           break;
         default:
           const _: never = value;
-          throw new Error(`Cant write instruction ${(value as Any).type}`)
+          throw new Error(`Cant write instruction ${(value as Instruction).type}`)
       }
       return bytes;
     }

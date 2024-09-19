@@ -33,7 +33,7 @@ export const createCPU = (clock: Clock, memory: Memory) => {
     }
   };
 
-  const run_instruction = (instruction: Core.Any) => {
+  const run_instruction = (instruction: Core.Instruction) => {
     switch (instruction.type) {
       case 'core.system.halt': {
         registers.state.write(0);
@@ -187,3 +187,5 @@ export const createCPU = (clock: Clock, memory: Memory) => {
 
   return { registers };
 };
+
+export type CPU = ReturnType<typeof createCPU>;

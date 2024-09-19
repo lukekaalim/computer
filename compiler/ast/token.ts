@@ -1,86 +1,106 @@
-export type Token =
-  | { type: 'word', text: string }
-  | { type: 'primitive', contents: string | number }
-  | { type: 'syntax', syntax: Syntax }
-  | { type: 'newline' }
+export namespace Token {
+  export type Word = { type: 'word', text: string };
+  export type Primitive = { type: 'primitive', contents: string | number };
+  export type Syntax = { type: 'syntax', syntax: Chars.Syntax }
+  export type NewLine = { type: 'newline' };
+  export type Comment = { type: 'comment', text: string };
+  export type EndOfFile = { type: 'end-of-file' };
 
-const stringToCharList = <T extends string>(value: T): (typeof value)["length"] => {
-  return value.length;
+  export type Any =
+    | Word
+    | Primitive
+    | Syntax
+    | NewLine
+    | Comment
+    | EndOfFile
 }
 
-type A = [0, 1];
-type C = A["length"]
+export namespace Chars {
+  export const letters = [
+    'a', 'b', 'c', 'd', 'e', 'f', 'h', 'h', 'i', 'j', 'k', 'l',
+    'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
+    'y', 'z', '_'
+  ] as const;
+  export type Letter = typeof letters[number];
+  export const digits = [
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
+  ] as const;
+  export type Digit = typeof digits[number];
+  export const quotes = [
+    `'`, `"`, `\``
+  ] as const;
+  export type Quote = typeof quotes[number];
+  export const syntax = [
+    '+', '-', '=', ';', '*', '/'
+  ] as const;
+  export type Syntax = typeof syntax[number];
+  export const whitespace = [
+    ' ', '\t', '\n'
+  ] as const;
+  export type WhitespaceChar = typeof whitespace[number];
 
+  export const isWhitespace = (char: string): char is WhitespaceChar => (Chars.whitespace as readonly string[]).includes(char);
+  export const isLetter = (char: string): char is Letter => (Chars.letters as readonly string[]).includes(char);
+  export const isDigit = (char: string): char is Digit => (Chars.digits as readonly string[]).includes(char);
+  export const isSyntax = (char: string): char is Syntax => (Chars.syntax as readonly string[]).includes(char);
+  export const isQuote = (char: string): char is Quote => (Chars.quotes as readonly string[]).includes(char);
+}
 
-const letters = [
-  'a', 'b', 'c', 'd', 'e', 'f', 'h', 'h', 'i', 'j', 'k', 'l',
-  'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
-  'y', 'z', '_'
-] as const;
-type Letter = typeof letters[number];
-const digits = [
-  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
-] as const;
-type Digit = typeof digits[number];
-const syntax = [
-  '+', '-', '=', ';', '*', '`'
-] as const;
-type Syntax = typeof syntax[number];
-const whitespace = [
-  ' ', '\t', '\n'
-] as const;
-type Whitespace = typeof whitespace[number];
 
 export const parse = (content: string) => {
   let index = 0;
-  const tokens: Token[] = [];
+  const tokens: Token.Any[] = [];
   
   while (index < content.length) {
     let char = content[index];
 
-    const isWhitespace = (char: string): char is Whitespace => (whitespace as readonly string[]).includes(char);
-    const isLetter = (char: string): char is Letter => (letters as readonly string[]).includes(char);
-    const isDigit = (char: string): char is Digit => (digits as readonly string[]).includes(char);
-    const isSyntax = (char: string): char is Syntax => (syntax as readonly string[]).includes(char);
-
-    if (isWhitespace(char)) {
+    if (Chars.isWhitespace(char)) {
       // skip
       if (char === '\n')
         tokens.push({ type: 'newline' });
       index++;
-    } else if (isLetter(char)) {
+    } else if (Chars.isLetter(char)) {
       let text = '';
-      while (isLetter(char)) {
+      while (Chars.isLetter(char)) {
         text += char;
         char = content[++index];
       }
       tokens.push({ type: 'word', text });
-    } else if (isSyntax(char)) {
-      tokens.push({ type: 'syntax', syntax: char });
-      index++;
-    } else if (isDigit(char)) {
+    } else if (Chars.isSyntax(char)) {
+      if (content.slice(index, index + 2) === '//') {
+        // double slash!
+        index += 2;
+        const commentStart = index;
+        while (char !== `\n`) {
+          char = content[++index];
+        }
+        tokens.push({ type: 'comment', text: content.slice(commentStart, index) });
+      } else {
+        tokens.push({ type: 'syntax', syntax: char });
+        index++;
+      }
+    } else if (Chars.isDigit(char)) {
       let number = '';
-      while (isDigit(char) || char === '.') {
+      while (Chars.isDigit(char) || char === '.') {
         number += char;
         char = content[++index];
       }
       tokens.push({ type: 'primitive', contents: Number(number) });
+    } else if (Chars.isQuote(char)) {
+      const quote_char = char;
+      const string_start_index = ++index;
+      char = content[index];
+      while (char !== quote_char) {
+        char = content[++index];
+      }
+      tokens.push({ type: 'primitive', contents: content.slice(string_start_index, index) });
+      index++;
     } else {
-      console.log('SKIP', char)
       index++;
     }
   }
 
+  tokens.push({ type: 'end-of-file' });
+
   return tokens;
 };
-
-const exampleCode = `
-const first = 100;
-const second = 2;
-
-const addition_result = 1 + 2;
-const multiplication_result = 1 * 2;
-const hello = \`world\`;
-`;
-
-console.log(parse(exampleCode));

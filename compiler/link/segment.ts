@@ -6,5 +6,5 @@ export type Segment = {
 }
 
 export type Step =
-  | { type: 'link.instruction', instruction: Core.Any }
+  | { type: 'link.instruction', instruction: Core.Instruction }
   | { type: 'link.load_variable', variable_id: string, destination: RegisterID }

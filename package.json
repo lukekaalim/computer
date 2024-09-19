@@ -1,7 +1,9 @@
 {
   "workspaces": [
     "isa",
-    "hardware"
+    "hardware",
+    "compiler",
+    "os"
   ],
   "license": "MIT",
   "devDependencies": {
