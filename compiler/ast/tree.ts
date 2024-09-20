@@ -1,6 +1,6 @@
 import { Chars, Token } from "./token";
 
-namespace AST {
+export namespace AST {
   export type Program = { type: 'program', statements: Statement[] }
 
   export type Statement =

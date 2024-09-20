@@ -1,15 +1,6 @@
-const register_ids = {
-  0: 'general_purpose_0',
-  1: 'general_purpose_1',
-  2: 'general_purpose_2',
-  3: 'general_purpose_3',
-  4: 'general_purpose_4',
-  5: 'general_purpose_5',
-  6: 'general_purpose_6',
-  7: 'general_purpose_7',
-} as const;
+export const register_ids = [0, 1, 2, 3, 4, 5, 6, 7] as const;
 
-export type RegisterID = keyof typeof register_ids;
+export type RegisterID = typeof register_ids[number];
 
 export const toRegisterId = (value: number): RegisterID => {
   switch (value) {
