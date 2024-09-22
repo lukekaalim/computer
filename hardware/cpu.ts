@@ -57,6 +57,11 @@ export const createCPU = (clock: Clock, memory: Memory) => {
         registers.general_purpose[instruction.dest].write(instruction.value);
         break;
       }
+      case 'core.register.copy': {
+        const value = registers.general_purpose[instruction.target].read();
+        registers.general_purpose[instruction.dest].write(value);
+        break;
+      }
       case 'core.memory.read': {
         switch (registers.instruction_state.read()) {
           case 0: {

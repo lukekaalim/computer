@@ -3,7 +3,8 @@
     "isa",
     "hardware",
     "compiler",
-    "operating_system"
+    "operating_system",
+    "web"
   ],
   "license": "MIT",
   "devDependencies": {

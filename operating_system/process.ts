@@ -3,7 +3,8 @@ import { Executable } from "./executable";
 
 export const loadExecutable = (cpu: CPU, memory: Memory, executable: Executable) => {
   // layout memory
-  memory.contents = [...executable.memory];
+  memory.contents.length = 0;
+  memory.contents.push(...executable.memory);
 
   // setup instruction_pointers
   cpu.registers.state.write(1);

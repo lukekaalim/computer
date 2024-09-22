@@ -1,12 +1,15 @@
 import { RegisterID, toRegisterId } from "./register";
 import { Word } from "./word";
 
-const instructions = [
+export const instruction_word_size = 4 as const;
+
+export const instructions = [
   "core.math.add",
   "core.math.multiply",
   "core.memory.read",
   "core.memory.write",
   "core.register.put",
+  "core.register.copy",
   "core.control.conditional_jump",
   "core.system.halt",
   "core.system.call",
@@ -67,9 +70,16 @@ export namespace Core {
       value: Word,
       dest: RegisterID
     };
+    export type Copy = {
+      type: `${RegisterPrefix}.copy`,
+      target: RegisterID,
+      dest: RegisterID
+    };
     export const factory = {
       put: (value: Word, dest: RegisterID) =>
         ({ type: 'core.register.put', value, dest }) as const,
+      copy: (target: RegisterID, dest: RegisterID) =>
+        ({ type: 'core.register.copy', target, dest }) as const,
     }
   }
   export namespace Control {
@@ -107,6 +117,7 @@ export namespace Core {
     | Memory.Write
     | Control.ConditionalJump
     | Register.Put
+    | Register.Copy
     | System.Halt
     | System.Call
 
@@ -154,10 +165,23 @@ export namespace Core {
             value: bytes[address + 1],
             dest: toRegisterId(bytes[address + 2]),
           }
+        case 'core.register.copy':
+          return {
+            type,
+            target: toRegisterId(bytes[address + 1]),
+            dest: toRegisterId(bytes[address + 2]),
+          }
+        case 'core.control.conditional_jump':
+          return {
+            type,
+            test: toRegisterId(bytes[address + 1]),
+            address: toRegisterId(bytes[address + 2]),
+          }
         case 'core.system.halt':
         case 'core.system.call':
           return { type } as Instruction;
         default:
+          const _: never = type;
           throw new Error(`Unknown instruction: ${type}`);
       }
     },
@@ -182,6 +206,10 @@ export namespace Core {
           break;
         case 'core.register.put':
           bytes[1] = value.value;
+          bytes[2] = value.dest;
+          break;
+        case 'core.register.copy':
+          bytes[1] = value.target;
           bytes[2] = value.dest;
           break;
         case 'core.system.halt':

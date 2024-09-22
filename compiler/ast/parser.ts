@@ -41,15 +41,12 @@ export namespace AST {
     | { type: 'addition' }
 }
 
-export const createSyntaxTree = (tokens: Token.Any[]) => {
+export const parse = (tokens: Token.Any[]) => {
   let index = 0;
 
   const readNextToken = () => {
     index++;
     return tokens[index];
-  }
-  const peekNextToken = () => {
-    return tokens[index + 1];
   }
 
   const readNextWord = () => {
@@ -155,5 +152,5 @@ export const createSyntaxTree = (tokens: Token.Any[]) => {
     return { type: 'program', statements }
   }
 
-  return { readProgram }
+  return readProgram();
 }

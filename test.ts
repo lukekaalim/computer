@@ -1,22 +1,12 @@
 import { createMemory, createCPU, createClock } from "hardware";
-import * as isa from "isa";
+import { loadExecutable } from "operating_system";
+import { assembly } from "./compiler/test";
 
 const clock = createClock()
 const memory = createMemory(clock);
 const cpu = createCPU(clock, memory);
 
-const is = isa.Core.factory;
-
-const program: number[] = [
-  is.put(8 * 4, 0),
-  is.put(1337, 1),
-  is.write(0, 1),
-  is.read(0, 2),
-  is.halt(),
-].map(isa.Core.serializer.write).flat(1)
-
-memory.contents.push(...program);
-cpu.registers.state.write(1);
+loadExecutable(cpu, memory, assembly);
 
 const states: Record<string, string | number>[] = [];
 const record = () => {
@@ -33,13 +23,18 @@ const record = () => {
 
 let i = 0;
 const tick = () => {
-  record();
-
-  clock.tick();
-  i++;
-
-  if (cpu.registers.state.read() === 0) {
-    stop();
+  try {
+    record();
+  
+    clock.tick();
+    i++;
+  
+    if (cpu.registers.state.read() === 0) {
+      stop();
+    }
+  } catch (error) {
+    console.error(error)
+    stop()
   }
 }
 
@@ -55,10 +50,10 @@ const printMemory = (memory: number[]) => {
 
 const stop = () => {
   record();
-  printMemory(program);
+  //printMemory(program);
   printMemory(memory.contents);
   console.table(states.filter(s => s['state'] === 3 && s['instruction_state'] === 0))
   clearInterval(interval_id);
 }
 
-const interval_id = setInterval(tick, 1);
+const interval_id = setInterval(tick, 5);
