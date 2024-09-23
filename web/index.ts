@@ -17,7 +17,11 @@ import { compile } from '../compiler/compile';
 import { alloc_state_def } from '../compiler/codegen/alloc';
 
 const program_text = `
-const eight = 3 + 5;
+const eight = 8;
+
+const nine = 9;
+
+const wonderful = 101;
 `
 const [exe, debug] = compile(program_text);
 
