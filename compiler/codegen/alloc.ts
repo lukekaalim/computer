@@ -1,6 +1,6 @@
 import { Core, RegisterID } from "isa";
 import { CodegenInstruction, group, loadVar } from "./instructions";
-import { defineStruct, generateWriteStructOps, getStructSize } from "./struct";
+import { defineStruct, generateWriteStruct, getStructSize } from "./struct";
 
 export const alloc_state_def = defineStruct('Allocator State', [
   'next_free_slot',
@@ -58,7 +58,7 @@ export const generateAllocInitalizer = (
     Core.factory.put(getStructSize(alloc_state_def), temp_1_rid),
     
     Core.factory.add(temp_0_rid, temp_1_rid, temp_1_rid),
-    ...generateWriteStructOps(
+    ...generateWriteStruct(
       temp_0_rid,
       temp_1_rid,
       temp_2_rid,
@@ -66,7 +66,7 @@ export const generateAllocInitalizer = (
       'next_free_slot'
     ),
     Core.factory.put(0, temp_1_rid),
-    ...generateWriteStructOps(
+    ...generateWriteStruct(
       temp_0_rid,
       temp_1_rid,
       temp_2_rid,

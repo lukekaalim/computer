@@ -97,7 +97,7 @@ const App = () => {
               background: 'blue',
               color: 'white'
             } || {};
-            return h('div', { style }, group.id)
+            return h('div', { style }, [group.id, ` Start: ${group.start_index}, End: ${group.end_index}` ])
           }),
           snapshot && [
             h(StructTable, {

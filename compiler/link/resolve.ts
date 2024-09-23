@@ -29,7 +29,7 @@ export const mapInstructions = (
       case 'linker.group': {
         const start_index = state.current_instruction_index
         mapInstructions(instruction.instructions, state);
-        const end_index = state.current_instruction_index;
+        const end_index = state.current_instruction_index--;
       
         state.groups.push({
           id: instruction.group_id,
@@ -62,7 +62,8 @@ export const mapIslands = (
   mapInstructions(initial_instructions, state);
   state.mapped_instructions.push({ type: 'core.system.halt' });
 
-  let pending_island: null | CodegenInstruction[] = null
+  let pending_island: null | CodegenInstruction[] = null;
+
   while (pending_island = state.pending_islands.pop() || null) {
     mapInstructions(pending_island, state);
     state.mapped_instructions.push({ type: 'core.system.halt' });

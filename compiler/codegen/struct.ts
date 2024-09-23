@@ -9,7 +9,7 @@ export type StructDefinition = {
 export const defineStruct = (name: string, fields: string[]): StructDefinition => ({ name, fields });
 
 export const calcFieldOffset = (struct: StructDefinition, field: string): number => {
-  return struct.fields.indexOf(field) || -1;
+  return struct.fields.indexOf(field);
 }
 
 export const getStructBytes = (struct: StructDefinition, values: Record<string, number>): Word[] => {
@@ -42,7 +42,7 @@ export const generateReadStructOps = (
 }
 
 // Places a value into a struct's field
-export const generateWriteStructOps = (
+export const generateWriteStruct = (
   struct_address_rid: RegisterID,
   value_rid: RegisterID,
   temp_0_rid: RegisterID,
@@ -54,11 +54,12 @@ export const generateWriteStructOps = (
 
   return [
     group([
-      // Put the field address into destination_rid
+      // Put the FieldOffset into TMP
       Core.factory.put(field_offset, temp_0_rid),
+      // Add StructAddress and FieldOffset in TMP (TMP is now FieldAddress)
       Core.factory.add(struct_address_rid, temp_0_rid, temp_0_rid),
-      // Then read it, and replace the value!
-      Core.factory.write(value_rid, temp_0_rid),
+      // Write value_rid to TMP
+      Core.factory.write(temp_0_rid, value_rid),
     ], `struct.write.${struct_def.name}.${field}`)
   ]
 }
