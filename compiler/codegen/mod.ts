@@ -1,2 +1,2 @@
-export * from './struct';
-export * from './program';
+export * from './generator';
+export * from './variables';

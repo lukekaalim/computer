@@ -1,4 +1,4 @@
-import { Core } from "isa";
+import { Instructions } from "isa";
 import { create8Cache } from "./cache";
 import { Clock } from "./clock";
 import { Memory } from "./memory";
@@ -33,36 +33,36 @@ export const createCPU = (clock: Clock, memory: Memory) => {
     }
   };
 
-  const run_instruction = (instruction: Core.Instruction) => {
+  const run_instruction = (instruction: Instructions.Any) => {
     switch (instruction.type) {
-      case 'core.system.halt': {
+      case Instructions.defs.halt.type: {
         registers.state.write(0);
         break;
       }
-      case 'core.math.add': {
+      case Instructions.defs.add.type: {
         const left = registers.general_purpose[instruction.left].read();
         const right = registers.general_purpose[instruction.right].read();
         const value = left + right;
-        registers.general_purpose[instruction.dest].write(value)
+        registers.general_purpose[instruction.output].write(value)
         break;
       }
-      case 'core.math.multiply': {
+      case Instructions.defs.multiply.type: {
         const left = registers.general_purpose[instruction.left].read();
         const right = registers.general_purpose[instruction.right].read();
         const value = left * right;
-        registers.general_purpose[instruction.dest].write(value)
+        registers.general_purpose[instruction.output].write(value)
         break;
       }
-      case 'core.register.put': {
-        registers.general_purpose[instruction.dest].write(instruction.value);
+      case Instructions.defs.put.type: {
+        registers.general_purpose[instruction.output].write(instruction.value);
         break;
       }
-      case 'core.register.copy': {
-        const value = registers.general_purpose[instruction.target].read();
-        registers.general_purpose[instruction.dest].write(value);
+      case Instructions.defs.copy.type: {
+        const value = registers.general_purpose[instruction.input].read();
+        registers.general_purpose[instruction.output].write(value);
         break;
       }
-      case 'core.memory.read': {
+      case Instructions.defs.read.type: {
         switch (registers.instruction_state.read()) {
           case 0: {
             // Automatically set instruction state to a non-zero value
@@ -73,7 +73,7 @@ export const createCPU = (clock: Clock, memory: Memory) => {
             if (memory.registers.mode.read() !== 0)
               break;
 
-            const address = registers.general_purpose[instruction.addr].read();
+            const address = registers.general_purpose[instruction.address].read();
             memory.registers.mode.write(1);
             memory.registers.address.write(address);
             registers.instruction_state.write(2);
@@ -84,7 +84,7 @@ export const createCPU = (clock: Clock, memory: Memory) => {
               break;
             memory.registers.mode.write(0)
             registers.instruction_state.write(0);
-            registers.general_purpose[instruction.dest].write(memory.registers.value.read());
+            registers.general_purpose[instruction.output].write(memory.registers.value.read());
             break;
           }
           default:
@@ -92,7 +92,7 @@ export const createCPU = (clock: Clock, memory: Memory) => {
         }
         break;
       }
-      case 'core.memory.write': {
+      case Instructions.defs.write.type: {
         switch (registers.instruction_state.read()) {
           case 0:
             registers.instruction_state.write(1);
@@ -100,7 +100,7 @@ export const createCPU = (clock: Clock, memory: Memory) => {
             if (memory.registers.mode.read() !== 0)
               break;
 
-            const address = registers.general_purpose[instruction.addr].read();
+            const address = registers.general_purpose[instruction.address].read();
             const value = registers.general_purpose[instruction.value].read();
             // Start the write
             memory.registers.mode.write(2);
@@ -161,7 +161,7 @@ export const createCPU = (clock: Clock, memory: Memory) => {
           instruction_cache.registers[6].read(),
           instruction_cache.registers[7].read()
         ];
-        const instruction = Core.serializer.read(instruction_buffer, offset);
+        const instruction = Instructions.deserialize(instruction_buffer.slice(offset, offset + 4));
         
         run_instruction(instruction);
 

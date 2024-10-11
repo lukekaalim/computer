@@ -1,52 +1,75 @@
-import { Core, Word, instruction_word_size } from "isa";
+import { Instructions, Word } from "isa";
 import { Executable } from "operating_system";
-import { getStructBytes, getStructSize } from "../codegen/mod";
 import { prelude_struct_def } from "./prelude";
-import { CodegenInstruction } from "../codegen/instructions";
-import { mapInstructions, mapIslands, resolve_labels, resolve_variables } from "./resolve";
 import { AssemblyDebug } from "./debug";
 
+import { Generator, Variable } from "compiler/codegen";
+
+import { resolveInstruction, resolveInstructions } from "./resolve";
+import { Struct } from "../struct/mod";
+
 export const assemble = (
-  generated_instructions: CodegenInstruction[]
+  generator: Generator.State,
 ): [Executable, AssemblyDebug] => {
   const memory: Word[] = [];
 
-  const mapper_state = mapIslands(generated_instructions);
+  const instruction_nodes = [...generator.output];
 
-  const stackSize = 128;
-  const programSize = mapper_state.mapped_instructions.length * instruction_word_size;
-  const preludeSize = getStructSize(prelude_struct_def);
+  instruction_nodes.push({
+    type: 'instruction',
+    instruction_type: 'system.halt',
+    args: {}
+  });
+
+  const stack_size = 128;
+  const program_size = instruction_nodes.length * Instructions.word_size;
+  const prelude_size = Struct.sizeOf(prelude_struct_def);
   
   const prelude_start = 0;
-  const program_start = prelude_start + preludeSize;
-  const heap_start = program_start + programSize;
-  const stack_start = heap_start + stackSize;
+  const program_start = prelude_start + prelude_size;
+  const stack_start = program_start + program_size;
+  const heap_start = stack_start + stack_size;
 
-  const prelude = getStructBytes(prelude_struct_def, {
+  const prelude = Struct.getBytes(prelude_struct_def, {
     program_start,
     stack_start,
     heap_start,
   });
 
-  const vars = new Map([
-    ...mapper_state.labels,
+  const variable_map = new Map<string, Word>([
+    ...generator.groups.map(group => [
+      [`${group.id}`, group.start],
+      [`${group.id}:start`, group.start],
+      [`${group.id}:end`, group.end],
+    ] as const).flat(1),
+
+    ...[...generator.variables.values()].map((variable: Variable) =>
+        [variable.id, variable.value] as const
+    ),
+    ...[...generator.stack_entries.values()].map((stack) =>
+        [stack.id, stack.offset] as const
+    ),
+
     ['program_start', program_start],
     ['stack_start', stack_start],
     ['heap_start', heap_start],
     ['alloc_state_addr', heap_start]
-  ]);
+  ])
+  const spans = [
+    ...generator.groups,
+    ...generator.il_node_spans,
+  ];
 
-  const resolved_instructions = resolve_variables(mapper_state.mapped_instructions, vars) as Core.Instruction[];
-  const program_code = resolved_instructions.flatMap(i => Core.serializer.write(i));
+  const instructions = resolveInstructions(instruction_nodes, variable_map);
+  const program_words = instructions.flatMap(Instructions.serialize);
 
   memory.push(...[
     prelude,
-    program_code,
+    program_words,
   ].flat(1))
-  const start = getStructSize(prelude_struct_def);
 
   const executable: Executable = {
-    start,
+    start: program_start,
     state: {
       general_purpose_registers: {
         0: 0,
@@ -63,11 +86,10 @@ export const assemble = (
   }
 
   const debug: AssemblyDebug = {
-    codegen_instructions: generated_instructions,
-    flat_instructions: mapper_state.mapped_instructions,
-    final_instructions: resolved_instructions,
-    instruction_groups: mapper_state.groups,
-    vars,
+    program_words,
+    instructions,
+    variable_map,
+    spans,
 
     prelude_start,
     program_start,

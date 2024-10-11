@@ -1,9 +1,9 @@
 import { FunctionComponent, h } from "preact";
-import { StructDefinition } from "../../compiler/codegen/struct";
 import classes from './Tables.module.css';
+import { Struct } from "../../compiler/struct/mod";
 
 export type StructTableProps = {
-  struct_def: StructDefinition,
+  struct_def: Struct.Definition,
   address?: number,
   values: number[]
 };

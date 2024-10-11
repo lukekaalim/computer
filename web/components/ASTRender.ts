@@ -1,0 +1,36 @@
+import { h } from "preact";
+import { AST } from 'compiler/ast';
+
+export type ASTRenderProps = {
+  program: AST.Program,
+};
+
+export const ASTRender = ({ program }: ASTRenderProps) => {
+  const all_nodes = flattenNodes(program);
+
+  return h('ol', {}, all_nodes.map(node => {
+    return h('li', { style: { marginLeft: `${node.depth * 8}px`}}, h('pre', {}, node.type + ` id=[${node.node_id}]`))
+  }))
+};
+
+const flattenNodes = (node: AST.Any, depth: number = 0): (AST.Any & { depth: number })[] => {
+  const children = getChildren(node);
+  return [{ ...node, depth }, ...children.map(c => flattenNodes(c, depth + 1)).flat(1)];
+}
+
+const getChildren = (node: AST.Any): AST.Any[] => {
+  switch (node.type) {
+    case 'expression:binary':
+      return [node.left, node.right];
+    case 'expression:identifier':
+    case 'expression:literal:number':
+    case 'expression:literal:string':
+      return [];
+    case 'statement:declaration':
+      return [node.init];
+    case 'program':
+      return node.statements;
+    default:
+      throw new Error();
+  }
+}

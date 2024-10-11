@@ -1,6 +1,6 @@
-import { defineStruct } from "../codegen/struct";
+import { Struct } from "../struct/mod";
 
-export const prelude_struct_def = defineStruct('prelude', [
+export const prelude_struct_def = Struct.define('prelude', [
   'stack_start',
   'heap_start',
   'program_start',

@@ -1,27 +1,35 @@
-import { inspect } from "util";
-import { parse } from "./ast/token";
-import { createSyntaxTree } from "./ast/parser";
-import { generateProgram } from './codegen/mod'
-import { assemble } from "./link/assemble";
+import { AST, Generator, IL, Token } from "compiler";
+
+import { writeFile } from 'node:fs/promises';
+
+import { inspect } from 'node:util';
+import { register_ids, RegisterID } from "isa";
 
 const exampleCode = `
-// a cool comment
-const first = 100;
-const second = 2;
-
-const addition_result = 1 + 2; // 3
-const multiplication_result = 2 * 2; // 4
-const hello = "world";
+const one = 1;
+const two = 2;
+const three = 3;
+const three = 1 + 2;
 `;
 
-const tokens = parse(exampleCode);
-const tree = createSyntaxTree(tokens.filter(t => t.type !== 'comment')).readProgram();
-const program = generateProgram(tree);
-export const assembly = assemble(program);
-
+const tokens = Token.read(exampleCode)
 console.log(tokens);
+const ast = AST.parse(tokens);
 console.log(
-  inspect(tree, { depth: null, colors: true })
+  inspect(ast, { depth: null, colors: true })
 );
-console.log(program);
-console.log(assembly);
+const il = IL.generate(ast);
+console.log(
+  inspect(il, { depth: null, colors: true })
+);
+const output = Generator.generate(il);
+console.log(
+  inspect(output.output, { depth: null, colors: true }),
+);
+console.log(
+  inspect(output.variables, { depth: null, colors: true }),
+);
+
+export const [assembly, assembly_debug] = assemble(output);
+
+console.log(assembly_debug)

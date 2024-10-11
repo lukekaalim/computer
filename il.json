@@ -1,0 +1,56 @@
+{
+  "type": "group",
+  "id": "program",
+  "contents": [
+    {
+      "type": "group",
+      "id": "use:globals:global",
+      "contents": [
+        {
+          "type": "stack",
+          "label": "global",
+          "size": 1,
+          "child": {
+            "type": "group",
+            "id": "program_statements",
+            "contents": [
+              {
+                "type": "group",
+                "id": "declaration_init:one",
+                "contents": [
+                  {
+                    "type": "put-var",
+                    "var_id": "global",
+                    "destination": 0
+                  },
+                  {
+                    "type": "group",
+                    "id": "",
+                    "contents": [
+                      {
+                        "type": "op",
+                        "instruction": {
+                          "type": "core.register.put",
+                          "value": 1,
+                          "dest": 1
+                        }
+                      },
+                      {
+                        "type": "op",
+                        "instruction": {
+                          "type": "core.memory.write",
+                          "addr": 0,
+                          "value": 1
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

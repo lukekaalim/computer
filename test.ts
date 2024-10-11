@@ -1,5 +1,8 @@
 import { createMemory, createCPU, createClock } from "hardware";
 import { loadExecutable } from "operating_system";
+
+import {} from 'compiler';
+
 import { assembly } from "./compiler/test";
 
 const clock = createClock()
@@ -51,7 +54,9 @@ const printMemory = (memory: number[]) => {
 const stop = () => {
   record();
   //printMemory(program);
+  console.log('MEMORY');
   printMemory(memory.contents);
+  console.log('STATE');
   console.table(states.filter(s => s['state'] === 3 && s['instruction_state'] === 0))
   clearInterval(interval_id);
 }

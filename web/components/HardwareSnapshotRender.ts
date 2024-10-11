@@ -1,7 +1,7 @@
 import { Fragment, FunctionComponent, h } from "preact";
 import { HardwareSnapshot } from "../data/snapshot";
 import { DataTable } from "./DataTable";
-import { Core } from "isa";
+import { Instructions } from "isa";
 
 const styles = {
   instruction: {
@@ -35,7 +35,7 @@ export type HardwareSnapshotRenderProps = {
 export const HardwardSnapshotRender: FunctionComponent<HardwareSnapshotRenderProps> = ({
   snapshot
 }) => {
-  const current_instruction = Core.serializer.read(snapshot.memory, snapshot.instruction_address);
+  const current_instruction = Instructions.deserialize(snapshot.memory.slice(snapshot.instruction_address, snapshot.instruction_address + 4));
 
   return h(Fragment, {}, [
     h('div', {}, [

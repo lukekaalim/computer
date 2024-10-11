@@ -1,4 +1,5 @@
 {
   "name": "isa",
-  "main": "mod.ts"
+  "main": "mod.ts",
+  "type": "module"
 }

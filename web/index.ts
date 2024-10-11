@@ -1,27 +1,27 @@
 import { Fragment, h, render } from 'preact';
-import { lex } from '../compiler/ast/lexer';
-import { parse } from '../compiler/ast/parser';
-import { generateProgram } from '../compiler/codegen/program';
+
+import { } from 'compiler/ast';
+
 import { assemble } from '../compiler/link/assemble';
 import { DataTable } from './components/DataTable';
 import { StructTable } from './components/StructTable';
 import { prelude_struct_def } from '../compiler/link/prelude';
-import { getStructSize } from '../compiler/codegen/struct';
 import { useEffect, useState } from 'preact/hooks';
 import { createClock, createCPU, createMemory } from 'hardware';
 import { loadExecutable } from 'operating_system';
-import { Core } from 'isa';
 import { HardwardSnapshotRender } from './components/HardwareSnapshotRender';
 import { captureSnapshot, HardwareSnapshot } from './data/snapshot';
 import { compile } from '../compiler/compile';
-import { alloc_state_def } from '../compiler/codegen/alloc';
+import { Instructions } from 'isa';
+import { Struct } from '../compiler/struct/mod';
+import { ILRender } from './components/ILRender';
+import { ASTRender } from './components/ASTRender';
 
 const program_text = `
-const eight = 8;
-
-const nine = 9;
-
-const wonderful = 101;
+// const string = "hello!";
+const one = 1;
+const two = 2;
+const three = one + two;
 `
 const [exe, debug] = compile(program_text);
 
@@ -62,21 +62,20 @@ const App = () => {
   const current_instruction_index = snapshot &&
     (snapshot.instruction_address - debug.exec_debug.program_start) / 4;
 
-  const current_instruction = snapshot && Core.serializer.read(
-    snapshot.memory,
-    snapshot.instruction_address,
+  const current_instruction = snapshot && Instructions.deserialize(
+    snapshot.memory.slice(snapshot.instruction_address, snapshot.instruction_address + 4),
   );
 
   return h(Fragment, {}, [
     h('details', {}, [
       h('summary', {}, 'Code details'),
       h('pre', {}, h('code', {}, program_text)),
-      h('pre', {}, h('code', {}, debug.exec_debug.final_instructions.map(i => JSON.stringify(i) + '\n'))),
+      h('pre', {}, h('code', {}, debug.exec_debug.instructions.map(i => JSON.stringify(i) + '\n'))),
       h(DataTable, { values: exe.memory }),
-      h(StructTable, { struct_def: prelude_struct_def, values: exe.memory.slice(0, getStructSize(prelude_struct_def))  }),
+      h(StructTable, { struct_def: prelude_struct_def, values: exe.memory.slice(0, Struct.sizeOf(prelude_struct_def))  }),
     ]),
     h('div', {}, snapshots.length),
-    h('div', { style: { display: 'flex' }}, [
+    h('div', { style: { display: 'flex', flex: 1, overflow: 'hidden' } }, [
       h('div', {}, [
         h('input', { type: 'range', min: 0, step: 1, max: snapshots.length - 1, value: snapshotIndex,
           onInput: e => setSnapshotIndex(e.currentTarget.valueAsNumber)
@@ -85,34 +84,39 @@ const App = () => {
           h(HardwardSnapshotRender, { snapshot })
         ]
       ]),
-      h('div', {}, [
+      h('div', { style: { overflowY: 'auto' } }, [
         current_instruction_index,
+        h('ol', {}, debug.ast_debug.tokens.map(token => h('li', {}, h('pre', {}, JSON.stringify(token))))),
+        h(ASTRender, { program: debug.ast }),
+        h(ILRender, { root: debug.il }),
         h('pre', {}, h('code', {},
-          debug.exec_debug.final_instructions.map((i, index) =>
+          debug.exec_debug.instructions.map((i, index) =>
             current_instruction_index === index
               ? h('span', { style: { background: 'red', color: 'white' }}, JSON.stringify(i) + '\n')
               : (JSON.stringify(i) + '\n')
             )
         )),
         h('div', {}, [
-          debug.exec_debug.instruction_groups.map(group => {
-            const isActive = group.start_index <=current_instruction_index && group.end_index > current_instruction_index;
+          debug.exec_debug.spans.map(group => {
+            const isActive = group.start <=current_instruction_index && group.end > current_instruction_index;
             const style = isActive && {
               background: 'blue',
               color: 'white'
             } || {};
-            return h('div', { style }, [group.id, ` Start: ${group.start_index}, End: ${group.end_index}` ])
+            return h('div', { style }, [group.id, ` Start: ${group.start}, End: ${group.end}` ])
           }),
           snapshot && [
             h(StructTable, {
               struct_def: prelude_struct_def,
-              values: snapshot.memory.slice(debug.exec_debug.prelude_start, debug.exec_debug.prelude_start + getStructSize(prelude_struct_def))
+              values: snapshot.memory.slice(debug.exec_debug.prelude_start, debug.exec_debug.prelude_start + Struct.sizeOf(prelude_struct_def))
             }),
+            /*
             h(StructTable, {
               address: debug.exec_debug.heap_start,
               struct_def: alloc_state_def,
               values: snapshot.memory.slice(debug.exec_debug.heap_start, debug.exec_debug.heap_start + getStructSize(alloc_state_def))
             }),
+            */
           ]
         ])
       ]),

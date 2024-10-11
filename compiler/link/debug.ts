@@ -1,12 +1,12 @@
-import { CodegenInstruction, InstructionGroup } from "../codegen/instructions";
+import { Instructions, Word } from "isa";
+import { Span } from "../codegen/span";
 
 export type AssemblyDebug = {
-  instruction_groups: InstructionGroup[],
-  final_instructions: CodegenInstruction[],
-  flat_instructions: CodegenInstruction[],
-  codegen_instructions: CodegenInstruction[]
+  instructions: Instructions.Any[],
+  program_words: Word[],
+  variable_map: Map<string, Word>,
 
-  vars: Map<string, number>,
+  spans: Span[],
 
   program_start: number,
   prelude_start: number,

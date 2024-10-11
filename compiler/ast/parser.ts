@@ -1,47 +1,10 @@
-import { Chars, Token } from "./token";
+import { id } from "../utils";
+import { Chars } from "./chars";
+import { AST } from "./nodes";
+import { Token } from "./token";
 
-export namespace AST {
-  export type Program = { type: 'program', statements: Statement[] }
 
-  export type Statement =
-    | DeclarationStatement
-
-  export type DeclarationStatement = {
-    type: 'statement:declaration',
-    identifier: string,
-    init: Expression
-  }
-
-  export type Expression =
-    | LiteralExpression
-    | BinaryExpression
-
-  export type LiteralExpression =
-    | StringLiteralExpression
-    | NumberLiteralExpression
-
-  export type StringLiteralExpression = {
-    type: 'expression:literal:string',
-    content: string,
-  }
-  export type NumberLiteralExpression = {
-    type: 'expression:literal:number',
-    content: number,
-  }
-
-  export type BinaryExpression = {
-    type: 'expression:binary',
-    left: Expression,
-    right: Expression,
-    operator: BinaryOperator
-  }
-
-  export type BinaryOperator =
-    | { type: 'multiplication' }
-    | { type: 'addition' }
-}
-
-export const parse = (tokens: Token.Any[]) => {
+export const parseTokens = (tokens: Token.Any[]) => {
   let index = 0;
 
   const readNextToken = () => {
@@ -80,35 +43,46 @@ export const parse = (tokens: Token.Any[]) => {
         case 'primitive':
           switch (typeof token.contents) {
             case 'number':
-              pendingExpression = { type: 'expression:literal:number', content: token.contents }
+              pendingExpression = { node_id: id('number'), type: 'expression:literal:number', content: token.contents }
               break;
             case 'string':
-              pendingExpression = { type: 'expression:literal:string', content: token.contents }
+              pendingExpression = { node_id: id('string'), type: 'expression:literal:string', content: token.contents }
               break;
           }
           break;
         case 'syntax':
           switch (token.syntax) {
             case '+': {
-              const left = pendingExpression || { type: 'expression:literal:number', content: 0 };
-              const operator = { type: 'addition' } as const;
+              const left = pendingExpression || { node_id: id('number'), type: 'expression:literal:number', content: 0 };
+              const operator = { node_id: id('addition'), type: 'addition' } as const;
               const right = readExpression();
-              return { type: 'expression:binary', left, right, operator };
+              return { node_id: id('binary'), type: 'expression:binary', left, right, operator };
             }
             case '*': {
               if (!pendingExpression)
                 throw new Error('Unexpected unary operator: "*"');
               const left = pendingExpression;
-              const operator = { type: 'multiplication' } as const;
+              const operator = { node_id: id('multiplication'), type: 'multiplication' } as const;
               const right = readExpression();
-              return { type: 'expression:binary', left, right, operator };
+              return { node_id: id('binary'), type: 'expression:binary', left, right, operator };
             }
+            default:
+              throw new Error(`Unsupported syntax in expression: "${token.syntax}"`)
           }
+          case 'word': {
+            pendingExpression = { node_id: id('identifier'), type: 'expression:identifier', id: token.text };
+            break;
+          }
+          default:
+            throw new Error(`Unsupported token in expression: "${token.type}"`)
       }
       expression_tokens.push(token);
     }
 
-    return pendingExpression || { type: 'expression:literal:number', content: 10 };
+    if (!pendingExpression)
+      throw new Error(`Not enough tokens to make an expression`);
+
+    return pendingExpression;
   };
 
   const readDeclaration = (): AST.DeclarationStatement => {
@@ -116,6 +90,7 @@ export const parse = (tokens: Token.Any[]) => {
     readNextSyntax('=');
     const init = readExpression();
     return {
+      node_id: id('declaration'),
       type: 'statement:declaration',
       identifier,
       init,
@@ -134,9 +109,11 @@ export const parse = (tokens: Token.Any[]) => {
           throw new Error(`Unexpected Word ${token.text}`);
     
         return readDeclaration();
+      case 'comment':
+        return readStatement();
       default:
         console.log(token)
-        throw new Error(`Syntax Error: Unexpected Token ${token.type} (expected word or newline)`)
+        throw new Error(`Syntax Error: Unexpected Token: "${token.type}" (expected word or newline)`)
     }
   }
 
@@ -149,7 +126,7 @@ export const parse = (tokens: Token.Any[]) => {
       else
         break;
     }
-    return { type: 'program', statements }
+    return { node_id: id('program'), type: 'program', statements }
   }
 
   return readProgram();
