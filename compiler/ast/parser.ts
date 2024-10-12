@@ -3,6 +3,32 @@ import { Chars } from "./chars";
 import { AST } from "./nodes";
 import { Token } from "./token";
 
+type TokenStream = {
+  read(): Token.Any,
+  assert<T extends Token.Any["type"]>(type: T, test: (token: Extract<Token.Any, { type: T}>) => boolean): void,
+}
+
+namespace TokenStream {
+  export const create = (tokens: Token.Any[]): TokenStream => {
+    let index = 0;
+
+    const stream: TokenStream = {
+      read() {
+        index++;
+        return tokens[index];
+      },
+      assert(type, test) {
+        const token = stream.read()
+        if (token.type !== type)
+          throw new Error();
+        if (test(token as any))
+          return;
+        throw new Error();
+      },
+    }
+    return stream;
+  }
+}
 
 export const parseTokens = (tokens: Token.Any[]) => {
   let index = 0;
@@ -27,6 +53,34 @@ export const parseTokens = (tokens: Token.Any[]) => {
       throw new Error(`Syntax Error: Unexpected Syntax ${token.syntax} (expected ${syntax})`)
     return token;
   }
+
+  // read tokens until the end of the statement
+  const collectExpressionTokens = () => {
+    const expression_tokens: Token.Any[] = [];
+    while (true) {
+      const token = readNextToken();
+
+      if (token.type === 'syntax' && token.syntax === ';')
+        return expression_tokens;
+    }
+  }
+
+  const tryReadFunction = (stream: TokenStream) => {
+    const firstToken = stream.read();
+    
+    if (firstToken.type === 'word') {
+      stream.assert('syntax', s => s.syntax === '=>')
+    } else if (firstToken.type === 'syntax' && firstToken.syntax === '(') {
+
+    }
+
+    throw new Error();
+  }
+
+  const readExpression2 = (stream: TokenStream) => {
+    // try read unary
+    // try read binary
+  };
 
   const readExpression = (): AST.Expression => {
     const expression_tokens: Token.Any[] = [];

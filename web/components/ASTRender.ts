@@ -1,17 +1,33 @@
 import { h } from "preact";
 import { AST } from 'compiler/ast';
+import { Span } from 'compiler/codegen';
 
 export type ASTRenderProps = {
   program: AST.Program,
+  spans: Span[],
+  instruction_index: number,
 };
 
-export const ASTRender = ({ program }: ASTRenderProps) => {
+export const ASTRender = ({ program, instruction_index, spans }: ASTRenderProps) => {
   const all_nodes = flattenNodes(program);
 
   return h('ol', {}, all_nodes.map(node => {
-    return h('li', { style: { marginLeft: `${node.depth * 8}px`}}, h('pre', {}, node.type + ` id=[${node.node_id}]`))
+    return h('li', {
+      style: { marginLeft: `${node.depth * 8}px`}
+    }, h(ASTEntry, { node, span: spans.find(s => s.id === `ast:${node.node_id}`), instruction_index }))
   }))
 };
+
+const ASTEntry = ({ node, span, instruction_index }: { node: (AST.Any & { depth: number }), span?: Span, instruction_index: number }) => {
+  const active = span && (
+    span.start <= instruction_index &&
+    span.end > instruction_index
+  )
+
+  return h('pre', {
+    style: { fontWeight: active ? 'bold' : 'normal' }
+  }, node.type + ` id=[${node.node_id}]`);
+}
 
 const flattenNodes = (node: AST.Any, depth: number = 0): (AST.Any & { depth: number })[] => {
   const children = getChildren(node);

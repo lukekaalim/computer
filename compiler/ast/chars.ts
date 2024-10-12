@@ -15,7 +15,7 @@ export namespace Chars {
   ] as const;
   export type Quote = typeof quotes[number];
   export const syntax = [
-    '+', '-', '=', ';', '*', '/'
+    '+', '-', '=', ';', '*', '/', '(', ')', '>', '{', '}', ',', '=>'
   ] as const;
   export type Syntax = typeof syntax[number];
   export const whitespace = [

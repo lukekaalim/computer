@@ -87,7 +87,7 @@ const App = () => {
       h('div', { style: { overflowY: 'auto' } }, [
         current_instruction_index,
         h('ol', {}, debug.ast_debug.tokens.map(token => h('li', {}, h('pre', {}, JSON.stringify(token))))),
-        h(ASTRender, { program: debug.ast }),
+        h(ASTRender, { program: debug.ast, instruction_index: current_instruction_index, spans: debug.exec_debug.spans }),
         h(ILRender, { root: debug.il }),
         h('pre', {}, h('code', {},
           debug.exec_debug.instructions.map((i, index) =>

@@ -23,6 +23,13 @@ export namespace AST {
     | LiteralExpression
     | BinaryExpression
     | IdentifierExpression
+    | FunctionExpression
+
+  export type FunctionExpression = Common & {
+    type: 'expression:function',
+    arguments: string[],
+    body: Statement[],
+  };
 
   export type IdentifierExpression = Common & {
     type: 'expression:identifier',
