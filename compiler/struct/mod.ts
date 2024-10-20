@@ -27,7 +27,7 @@ export namespace Struct {
   export const fieldOffset = (def: Definition, field: string) => {
     const fieldIndex = def.fields.indexOf(field);
     if (fieldIndex === -1)
-      throw new Error(`Field ${field} no found in struct ${def.name}`);
+      throw new Error(`Field "${field}" not found in struct ${def.name}`);
     return fieldIndex;
   }
 

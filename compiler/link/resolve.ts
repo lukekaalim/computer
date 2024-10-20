@@ -37,8 +37,10 @@ export const resolveInstructionArg = (arg: IL.InstructionArg, variables: Map<str
       return arg.value;
     case 'reference':
       const value = variables.get(arg.id);
-      if (typeof value !== 'number')
+      if (typeof value !== 'number') {
+        console.error(variables);
         throw new Error(`Unresolved variable: "${arg.id}"`);
+      }
       return value;
     default:
       throw new Error(`Cannot resolve instruction arg of type: "${arg.type}"`)

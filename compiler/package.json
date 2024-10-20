@@ -4,10 +4,12 @@
   
   "exports": {
     ".": "./mod.ts",
-    "./ast": "./ast/mod.ts",
-    "./codegen": "./codegen/mod.ts",
+    "./lexer": "./lexer/mod.ts",
+    "./parser": "./parser/mod.ts",
     "./il": "./il/mod.ts",
-    "./struct": "./struct/mod.ts",
-    "./link": "./link/mod.ts"
+    "./codegen": "./codegen/mod.ts",
+    "./link": "./link/mod.ts",
+
+    "./struct": "./struct/mod.ts"
   }
 }

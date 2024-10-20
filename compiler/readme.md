@@ -1,8 +1,10 @@
 # Compiler
 
-The compiler is composed of three submodules:
-  - [AST](./ast/readme.md)
+The compiler is composed of five submodules:
+  - [Lexer](./lexer/readme.md)
+  - [Parser](./parser/readme.md)
   - [IL](./il/readme.md)
+  - [Codegen](./codegen/readme.md)
   - [Link](./link/readme.md)
 
 It also exposes a utility function `compile()` that wraps

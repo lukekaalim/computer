@@ -5,7 +5,22 @@ import { Token } from "./token";
 
 type TokenStream = {
   read(): Token.Any,
-  assert<T extends Token.Any["type"]>(type: T, test: (token: Extract<Token.Any, { type: T}>) => boolean): void,
+  assert<T extends Token.Any["type"]>(
+    type: T,
+    test?: (token: Extract<Token.Any, { type: T}>) => boolean
+  ): Extract<Token.Any, { type: T}>,
+  tryFork<T>(withFork: (forkedStream: TokenStream) => T): T | null
+}
+
+const firstSuccess = <T>(candidates: (() => T | null)[]): T | null => {
+  for (const candidate of candidates) {
+    try {
+      const result = candidate();
+      if (result)
+        return result;
+    } catch (error) {}
+  }
+  return null;
 }
 
 namespace TokenStream {
@@ -21,7 +36,7 @@ namespace TokenStream {
         const token = stream.read()
         if (token.type !== type)
           throw new Error();
-        if (test(token as any))
+        if (!test || test(token as any))
           return;
         throw new Error();
       },
@@ -139,10 +154,12 @@ export const parseTokens = (tokens: Token.Any[]) => {
     return pendingExpression;
   };
 
-  const readDeclaration = (): AST.DeclarationStatement => {
-    const identifier = readNextWord().text;
-    readNextSyntax('=');
+  const tryReadDeclaration = (stream: TokenStream): AST.DeclarationStatement => {
+    const identifier = stream.assert('word').text;
+    stream.assert('syntax', s => s.syntax === '=');
+    
     const init = readExpression();
+
     return {
       node_id: id('declaration'),
       type: 'statement:declaration',
@@ -151,11 +168,16 @@ export const parseTokens = (tokens: Token.Any[]) => {
     }
   }
 
-  const readStatement = () => {
+  const tryReadStatement = (stream: TokenStream) => {
+    
+    return firstSuccess([
+      () => stream.tryFork(stream => tryReadDeclaration(stream))
+    ]);
+
+
     const token = readNextToken();
     switch (token.type) {
-      case 'newline':
-        return readStatement();
+      // how do I want to handle whitespace?
       case 'end-of-file':
         return null;
       case 'word':

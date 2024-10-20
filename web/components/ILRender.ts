@@ -51,6 +51,11 @@ const flattenIL = (
         node_with_position,
         descend(node.withStackedValue, `stack(${node.label})`),
       ].flat(1);
+    case 'island':
+      return [
+        node_with_position,
+        ...descend(node.contents, `island`)
+      ]
     default:
       throw new Error(`Cannot flatten node: "${node.type}"`)
   }

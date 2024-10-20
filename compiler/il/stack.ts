@@ -1,12 +1,5 @@
 import { Struct } from "../struct/mod";
 import { IL } from "./nodes";
-import { id } from "../utils";
-
-export const allocStackStruct = (def: Struct.Definition, id: string, withStruct: IL.Node) => {
-  return IL.label(`use:${def.name}:${id}`,
-    IL.stack(id, Struct.sizeOf(def), withStruct)
-  );
-};
 
 /**
  * Places the memory address of a

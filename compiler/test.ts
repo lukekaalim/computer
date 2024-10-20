@@ -1,35 +1,14 @@
-import { AST, Generator, IL, Token } from "compiler";
-
-import { writeFile } from 'node:fs/promises';
-
-import { inspect } from 'node:util';
-import { register_ids, RegisterID } from "isa";
+import { compile } from "./compile";
 
 const exampleCode = `
-const one = 1;
-const two = 2;
-const three = 3;
-const three = 1 + 2;
+const main = () => {
+  const one = 1;
+};
+
+main();
 `;
 
-const tokens = Token.read(exampleCode)
-console.log(tokens);
-const ast = AST.parse(tokens);
-console.log(
-  inspect(ast, { depth: null, colors: true })
-);
-const il = IL.generate(ast);
-console.log(
-  inspect(il, { depth: null, colors: true })
-);
-const output = Generator.generate(il);
-console.log(
-  inspect(output.output, { depth: null, colors: true }),
-);
-console.log(
-  inspect(output.variables, { depth: null, colors: true }),
-);
+const [exec, debug] = compile(exampleCode)
 
-export const [assembly, assembly_debug] = assemble(output);
-
-console.log(assembly_debug)
+console.log(debug.exec_debug.instructions)
+console.log(exec)

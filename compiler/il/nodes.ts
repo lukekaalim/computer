@@ -1,5 +1,6 @@
 import { Instructions, register_ids, RegisterID, Word } from "isa"
 import { id } from "../utils";
+import { Struct } from "../mod";
 
 export namespace IL {
   export type InstructionBinaryExpression =
@@ -35,13 +36,13 @@ export namespace IL {
   export type StackNode = {
     type: 'stack',
     label: string,
-    size: number,
+    def: Struct,
     withStackedValue: Node,
   }
-  export const stack = (label: string, size: number, withStackedValue: Node): StackNode => ({
+  export const stack = (label: string, def: Struct, withStackedValue: Node): StackNode => ({
     type: 'stack',
     label,
-    size,
+    def,
     withStackedValue,
   })
 
@@ -56,12 +57,10 @@ export namespace IL {
 
   export type IslandNode = {
     type: 'island',
-    id: string,
     contents: Node
   }
-  export const island = (id: string, contents: Node): IslandNode => ({
+  export const island = (contents: Node): IslandNode => ({
     type: 'island',
-    id,
     contents
   });
 

@@ -86,6 +86,7 @@ export const assemble = (
   }
 
   const debug: AssemblyDebug = {
+    generator,
     program_words,
     instructions,
     variable_map,

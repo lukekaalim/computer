@@ -5,19 +5,20 @@ import { AssemblyDebug } from "./link/debug";
 
 import { generateProgramIL, IL } from 'compiler/il';
 import { Generator } from 'compiler/codegen';
-import { Token, AST, ASTDebug } from 'compiler/ast';
-import {} from 'compiler/link';
+import { read, Token } from 'compiler/lexer';
+import { AST, parse } from 'compiler/parser';
 
 export type CompilerDebug = {
-  ast_debug: ASTDebug,
-  ast: AST.Program,
-  il: IL.Node,
+  source_code: string,
+  tokens: Token[],
+  ast: AST,
+  il: IL,
   exec_debug: AssemblyDebug,
 };
 
 export const compile = (source_code: string): [Executable, CompilerDebug] => {
-  const tokens = Token.read(source_code);
-  const ast = AST.parse(tokens);
+  const tokens = read(source_code);
+  const ast = parse(tokens);
 
   const il = generateProgramIL(ast);
   const gen = Generator.generate(il);
@@ -25,9 +26,8 @@ export const compile = (source_code: string): [Executable, CompilerDebug] => {
   const [executable, exec_debug] = assemble(gen);
 
   const debug = {
-    ast_debug: {
-      tokens
-    },
+    source_code,
+    tokens,
     ast,
     il,
     exec_debug,

@@ -1,5 +1,6 @@
 import { register_ids, RegisterID } from "isa";
 import { IL } from "compiler/il";
+import { Struct } from "compiler/struct";
 
 import { Variable } from "./variables";
 import { Span } from "./span";
@@ -15,11 +16,15 @@ export namespace Generator {
   
     groups: Span[],
     il_node_spans: Span[],
+    stack_spans: Span[],
+
     path: string[],
   
     index: number,
     il_index: number,
     ast_index: number,
+
+    pending_islands: IL.IslandNode[],
   
     output: IL.InstructionNode[],
   }
@@ -32,9 +37,13 @@ export namespace Generator {
 
     il_index: 0,
     ast_index: 0,
+
+    pending_islands: [],
   
     groups: [],
     il_node_spans: [],
+    stack_spans: [],
+
     path: [],
     index: 0,
     output: [],
@@ -72,6 +81,10 @@ export namespace Generator {
           state.free_registers.push(register);
           return;
         }
+        case 'island': {
+          state.pending_islands.push(node);
+          return;
+        }
         case 'instruction': {
           state.output.push(node);
           state.index++;
@@ -95,19 +108,25 @@ export namespace Generator {
           return;
         }
         case 'stack': {
+          const start = state.index;
+          const size = Struct.sizeOf(node.def);
+
           const offset = state.stack_offset;
-          state.stack_offset += node.size;
-          state.stack_entries.push({ size: node.size, offset, id: node.label })
+          state.stack_offset += size;
+          state.stack_entries.push({ def: node.def, offset, id: node.label })
 
           descendPath(`s`, () => {
             run(state, node.withStackedValue);
           })
 
-          state.stack_offset -= node.size;
+          state.stack_offset -= size;
+          const end = state.index;
+          state.stack_spans.push({ start, end, id: `stack:${node.label}` });
           return;
         }
         default:
-          throw new Error(`Cannot generate code for node: "${node.type}"`)
+          const _: never = node;
+          throw new Error(`Cannot generate code for node: "${(node as IL).type}"`)
       }
     })
   }
@@ -115,6 +134,18 @@ export namespace Generator {
   export const generate = (root: IL.Node): State => {
     const state = createNewState();
     run(state, root);
+
+    state.output.push(IL.instruction('system.halt', {}))
+
+    while (state.pending_islands.length > 0) {
+      const island = state.pending_islands.pop();
+
+      if (!island)
+        throw new Error();
+
+      run(state, island.contents);
+    }
+
     return state;
   }
 }

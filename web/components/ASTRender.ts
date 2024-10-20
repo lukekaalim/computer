@@ -1,5 +1,5 @@
 import { h } from "preact";
-import { AST } from 'compiler/ast';
+import { AST } from 'compiler/parser';
 import { Span } from 'compiler/codegen';
 
 export type ASTRenderProps = {
@@ -46,7 +46,9 @@ const getChildren = (node: AST.Any): AST.Any[] => {
       return [node.init];
     case 'program':
       return node.statements;
+    case 'expression:function':
+      return node.body;
     default:
-      throw new Error();
+      throw new Error(`Unknown child`);
   }
 }

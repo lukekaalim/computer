@@ -12,7 +12,7 @@ export namespace Token {
     | Word
     | Primitive
     | Syntax
-    | NewLine
+    //| NewLine
     | Comment
     | EndOfFile
   
@@ -25,8 +25,8 @@ export namespace Token {
 
       if (Chars.isWhitespace(char)) {
         // skip
-        if (char === '\n')
-          tokens.push({ type: 'newline' });
+        //if (char === '\n')
+          //tokens.push({ type: 'newline' });
         index++;
       } else if (Chars.isLetter(char)) {
         let text = '';
