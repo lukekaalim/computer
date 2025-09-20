@@ -8,7 +8,11 @@ export namespace IL {
   export type InstructionArg =
     | { type: 'literal', value: number }
     | { type: 'reference', id: string }
-    | { type: 'expression', expr: InstructionBinaryExpression }
+    //| { type: 'expression', expr: InstructionBinaryExpression }
+
+  export type Expression =
+    | { type: 'literal', value: number }
+    | { type: 'reference', id: string }
 
   type InstructionArgs<T extends Instructions.Any> = {
     [key in Exclude<keyof T, "type">]: InstructionArg
@@ -18,6 +22,7 @@ export namespace IL {
     literal: (value: number): InstructionArg => ({ type: 'literal', value }),
     reference: (id: string): InstructionArg => ({ type: 'reference', id }),
   }
+  export const expr = arg;
   
   export type InstructionNode = {
     type: 'instruction',
@@ -26,24 +31,11 @@ export namespace IL {
   }
   export const instruction = <T extends Instructions.Any["type"]>(
     instruction_type: T,
-    args: InstructionArgs<Extract<Instructions.Any, { type: T}>>
+    args: InstructionArgs<Extract<Instructions.Any, { type: T }>>
   ): InstructionNode => ({
     type: 'instruction',
     instruction_type,
     args,
-  })
-
-  export type StackNode = {
-    type: 'stack',
-    label: string,
-    def: Struct,
-    withStackedValue: Node,
-  }
-  export const stack = (label: string, def: Struct, withStackedValue: Node): StackNode => ({
-    type: 'stack',
-    label,
-    def,
-    withStackedValue,
   })
 
   export type ListNode = {
@@ -55,6 +47,9 @@ export namespace IL {
     nodes,
   })
 
+  /**
+   * An Island Node is 
+   */
   export type IslandNode = {
     type: 'island',
     contents: Node
@@ -64,12 +59,19 @@ export namespace IL {
     contents
   });
 
+  /**
+   * Declare a data node, which will be a set of bytes
+   * allocated in the "Data" block of process memory.
+   * 
+   * The ID you passed to the data node can be used to
+   * lookup the data at runtime.
+   */
   export type DataNode = {
     type: 'data',
     id: string,
-    contents: Word[],
+    contents: Expression[],
   }
-  export const data = (id: string, contents: Word[]): DataNode => ({
+  export const data = (id: string, contents: Expression[]): DataNode => ({
     type: 'data',
     id,
     contents
@@ -106,13 +108,22 @@ export namespace IL {
     return borrowRegister(register_id, withRegister(IL.arg.reference(register_id)));
   }
 
+  /**
+   * Jump to a new code routine.
+   * If there are any borrowed registers, this node will throw an error
+   * (all registers must be released before this node is invoked).
+   */
+  export type SubroutineNode = {
+    type: 'subroutine',
+  }
+
   export type Node =
     | InstructionNode
-    | StackNode
     | ListNode
     | IslandNode
     | LabelNode
     | BorrowRegisterNode
+    | DataNode
 }
 
 export type IL = IL.Node;

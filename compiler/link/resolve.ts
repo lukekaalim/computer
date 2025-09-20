@@ -1,6 +1,21 @@
 import { Instructions, Word } from "isa";
 import { IL } from "../il/nodes";
 
+export const resolveDatas = (
+  dataBlock: IL.DataNode[],
+  variables: Map<string, Word>
+): Word[] => {
+  return dataBlock.map(block => resolveDataBlock(block, variables)).flat(1);
+}
+
+export const resolveDataBlock = (
+  dataBlock: IL.DataNode,
+  variables: Map<string, Word>
+): Word[] => {
+  return dataBlock.contents.map(expression =>
+    resolveExpression(expression, variables));
+}
+
 export const resolveInstructions = (
   instructions: IL.InstructionNode[],
   variables: Map<string, Word>
@@ -21,7 +36,7 @@ export const resolveInstruction = (
       return null;
 
     const instruction_arg = instruction.args[arg as keyof typeof instruction.args] as IL.InstructionArg;
-    const value = resolveInstructionArg(instruction_arg, variables);
+    const value = resolveExpression(instruction_arg, variables);
     return [arg, value]
   }).filter(x => !!x));
 
@@ -31,7 +46,7 @@ export const resolveInstruction = (
   };
 }
 
-export const resolveInstructionArg = (arg: IL.InstructionArg, variables: Map<string, Word>) => {
+export const resolveExpression = (arg: IL.Expression, variables: Map<string, Word>) => {
   switch (arg.type) {
     case 'literal':
       return arg.value;

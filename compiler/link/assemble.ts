@@ -1,40 +1,28 @@
 import { Instructions, Word } from "isa";
 import { Executable } from "operating_system";
-import { prelude_struct_def } from "./prelude";
 import { AssemblyDebug } from "./debug";
 
 import { Generator, Variable } from "compiler/codegen";
 
-import { resolveInstruction, resolveInstructions } from "./resolve";
+import { resolveDataBlock, resolveDatas, resolveInstruction, resolveInstructions } from "./resolve";
 import { Struct } from "../struct/mod";
+import { createDataTable } from "./data";
 
 export const assemble = (
   generator: Generator.State,
 ): [Executable, AssemblyDebug] => {
   const memory: Word[] = [];
 
-  const instruction_nodes = [...generator.output];
+  const instruction_nodes = [];
 
-  instruction_nodes.push({
-    type: 'instruction',
-    instruction_type: 'system.halt',
-    args: {}
-  });
+  instruction_nodes.push(...generator.output);
 
   const stack_size = 128;
   const program_size = instruction_nodes.length * Instructions.word_size;
-  const prelude_size = Struct.sizeOf(prelude_struct_def);
-  
-  const prelude_start = 0;
-  const program_start = prelude_start + prelude_size;
-  const stack_start = program_start + program_size;
-  const heap_start = stack_start + stack_size;
 
-  const prelude = Struct.getBytes(prelude_struct_def, {
-    program_start,
-    stack_start,
-    heap_start,
-  });
+  const data_table = createDataTable(generator.data_blocks);
+
+  const free_memory_start = program_size + data_table.totalSize;
 
   const variable_map = new Map<string, Word>([
     ...generator.groups.map(group => [
@@ -46,14 +34,11 @@ export const assemble = (
     ...[...generator.variables.values()].map((variable: Variable) =>
         [variable.id, variable.value] as const
     ),
-    ...[...generator.stack_entries.values()].map((stack) =>
-        [stack.id, stack.offset] as const
+    ...[...data_table.offsetsById.entries()].map(([id, offset]) =>
+        [id, offset + program_size] as const
     ),
-
-    ['program_start', program_start],
-    ['stack_start', stack_start],
-    ['heap_start', heap_start],
-    ['alloc_state_addr', heap_start]
+    ['free_memory_start', free_memory_start],
+    ['stack_size', stack_size]
   ])
   const spans = [
     ...generator.groups,
@@ -61,15 +46,14 @@ export const assemble = (
   ];
 
   const instructions = resolveInstructions(instruction_nodes, variable_map);
+  const data_words = resolveDatas(generator.data_blocks, variable_map);
   const program_words = instructions.flatMap(Instructions.serialize);
 
-  memory.push(...[
-    prelude,
-    program_words,
-  ].flat(1))
+  memory.push(...program_words);
+  memory.push(...data_words);
 
   const executable: Executable = {
-    start: program_start,
+    start: 0,
     state: {
       general_purpose_registers: {
         0: 0,
@@ -92,10 +76,9 @@ export const assemble = (
     variable_map,
     spans,
 
-    prelude_start,
-    program_start,
-    stack_start,
-    heap_start,
+    program_start: 0,
+    stack_start: free_memory_start,
+    heap_start: free_memory_start + stack_size,
   }
 
 

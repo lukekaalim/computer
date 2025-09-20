@@ -3,7 +3,7 @@ import { createRegister } from "./register";
 
 /**
  * Create a piece of hardware that can perform
- * basic arithmatic
+ * basic arithmetic
  */
 export const createALU = (clock: Clock) => {
   const registers = {

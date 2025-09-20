@@ -12,7 +12,6 @@ export type AssemblyDebug = {
   spans: Span[],
 
   program_start: number,
-  prelude_start: number,
   heap_start: number,
   stack_start: number,
 };

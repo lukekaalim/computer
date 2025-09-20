@@ -17,16 +17,7 @@ export const StackViewer = ({ debug, instruction_index, snapshot }: StackViewerP
   });
 
   return h(Fragment, {}, [
-    debug.exec_debug.generator.stack_entries
-    .map(entry => {
-      const address = entry.offset + debug.exec_debug.stack_start;
-
-      return h(StructTable, {
-        struct_def: entry.def,
-        address,
-        values: snapshot.memory.slice(address, address + Struct.sizeOf(entry.def))
-      })
-    })
+    'WIP'
   ])
 
 }

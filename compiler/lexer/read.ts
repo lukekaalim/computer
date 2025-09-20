@@ -16,7 +16,7 @@ export const read = (content: string): Token.Any[] => {
         text += char;
         char = content[++index];
       }
-      tokens.push({ type: 'word', text });
+      tokens.push(Token.Word(text));
     } else if (Chars.isSyntax(char)) {
       if (content.slice(index, index + 2) === '//') {
         // double slash!
@@ -25,13 +25,13 @@ export const read = (content: string): Token.Any[] => {
         while (char !== `\n`) {
           char = content[++index];
         }
-        tokens.push({ type: 'comment', text: content.slice(commentStart, index) });
+        tokens.push(Token.Comment(content.slice(commentStart, index)));
       } else {
         if (char === '=' && content[index + 1] === '>') {
-          tokens.push({ type: 'syntax', syntax: '=>' });
+          tokens.push(Token.Syntax('=>'));
           index += 2;
         } else {
-          tokens.push({ type: 'syntax', syntax: char });
+          tokens.push(Token.Syntax(char));
           index++;
         }
       }
@@ -41,7 +41,7 @@ export const read = (content: string): Token.Any[] => {
         number += char;
         char = content[++index];
       }
-      tokens.push({ type: 'primitive', contents: Number(number) });
+      tokens.push(Token.Primitive(Number(number)));
     } else if (Chars.isQuote(char)) {
       const quote_char = char;
       const string_start_index = ++index;
@@ -49,7 +49,7 @@ export const read = (content: string): Token.Any[] => {
       while (char !== quote_char) {
         char = content[++index];
       }
-      tokens.push({ type: 'primitive', contents: content.slice(string_start_index, index) });
+      tokens.push(Token.Primitive(content.slice(string_start_index, index)));
       index++;
     } else {
       index++;

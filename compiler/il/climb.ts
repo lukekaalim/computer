@@ -1,27 +1,51 @@
 import { AST } from "compiler/parser";
 import { Struct } from "compiler/struct";
 import { IL } from "./nodes";
-import { putStackFieldAddress } from "./stack";
 import { id } from "../utils";
 import { generateScopeStruct } from "./closure";
 import exp from "constants";
+import { allocateStackStruct } from "./struct";
+import { writeValue } from "./memory";
 
 export type ProgramSetup = {
   global_struct: Struct.Definition,
 
   current_scope_struct: Struct.Definition,
+
+  stack_pointer_id: string,
+  frame_pointer_id: string,
+
+  global_pointer_id: string,
 };
 
 export const generateProgramIL = (program: AST): IL.Node => {
   const global_struct = generateScopeStruct('global', program.statements);
+  const stack_pointer_id = id(`stack_pointer`);
+  const frame_pointer_id = id(`frame_pointer`);
+  const global_pointer_id = id(`frame_pointer`);
 
-  const setup: ProgramSetup = { global_struct, current_scope_struct: global_struct };
+  const setup: ProgramSetup = {
+    global_struct,
+    current_scope_struct: global_struct,
+    stack_pointer_id,
+    frame_pointer_id,
+    global_pointer_id,
+  };
 
-  return IL.label(`ast:${program.node_id}`,
-    IL.stack('global', global_struct, IL.list(program.statements.map(statement =>
+  return IL.label(`ast:${program.node_id}`, IL.list([
+    // Setup the program
+    IL.data(stack_pointer_id, [IL.expr.literal(0)]),
+    IL.data(frame_pointer_id, [IL.expr.literal(0)]),
+    IL.data(global_pointer_id, [IL.expr.literal(0)]),
+
+    // Write the address of the global struct
+    IL.autoBorrowRegister(global_struct_address => IL.list([
+      allocateStackStruct(global_struct, setup, global_struct_address),
+      writeValue(global_pointer_id, global_struct_address)
+    ])),
+    IL.list(program.statements.map(statement =>
       generateStatementIL(setup, statement)))
-    )
-  );
+  ]));
 };
 
 const generateFunctionIL = (
@@ -40,8 +64,8 @@ const generateFunctionIL = (
 
   return IL.list([
     IL.island(IL.label(func_id, IL.label(`ast:${func.node_id}`,
-      IL.stack(func_scope.name, func_scope, IL.list(func.body.map(statement =>
-        generateStatementIL(func_setup, statement))))
+      IL.list(func.body.map(statement =>
+        generateStatementIL(func_setup, statement)))
     ))),
     IL.instruction('register.put', {
       value: IL.arg.reference(func_id),
@@ -59,7 +83,7 @@ const generateStatementIL = (setup: ProgramSetup, statement: AST.Statement) => {
 
         return IL.borrowRegister(address_rid, IL.list([
           // Get the address where we will put the init value
-          putStackFieldAddress(setup.current_scope_struct.name, setup.current_scope_struct, statement.identifier, IL.arg.reference(address_rid)),
+          //putStackFieldAddress(setup.current_scope_struct.name, setup.current_scope_struct, statement.identifier, IL.arg.reference(address_rid)),
           IL.borrowRegister(value_rid, IL.list([
             generateExpressionIL(setup, statement.init, IL.arg.reference(value_rid)),
             IL.instruction('memory.write', { address: IL.arg.reference(address_rid), value: IL.arg.reference(value_rid)}),
@@ -110,7 +134,7 @@ const generateExpressionIL = (setup: ProgramSetup, expression: AST.Expression, d
         const scope_struct = is_local ? setup.current_scope_struct : setup.global_struct;
 
         return IL.list([
-          putStackFieldAddress(scope_struct.name, scope_struct, expression.text, dest_rid),
+          //putStackFieldAddress(scope_struct.name, scope_struct, expression.text, dest_rid),
           IL.instruction('memory.read', { address: dest_rid, output: dest_rid })
         ])
       }

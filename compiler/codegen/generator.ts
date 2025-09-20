@@ -2,7 +2,7 @@ import { register_ids, RegisterID } from "isa";
 import { IL } from "compiler/il";
 import { Struct } from "compiler/struct";
 
-import { Variable } from "./variables";
+import { Variable, VariableID } from "./variables";
 import { Span } from "./span";
 import { StackEntry } from "./stack";
 
@@ -10,9 +10,9 @@ export namespace Generator {
   export type State = {
     free_registers: RegisterID[],
     variables: Map<string, Variable>,
-  
-    stack_entries: StackEntry[],
-    stack_offset: number,
+    labels: Map<VariableID, Variable>,
+
+    data_blocks: IL.DataNode[],
   
     groups: Span[],
     il_node_spans: Span[],
@@ -31,9 +31,9 @@ export namespace Generator {
   export const createNewState = (): State => ({
     free_registers: [...register_ids],
     variables: new Map(),
-  
-    stack_entries: [],
-    stack_offset: 0,
+    labels: new Map(),
+
+    data_blocks: [],
 
     il_index: 0,
     ast_index: 0,
@@ -107,23 +107,9 @@ export namespace Generator {
           state.groups.push({ id: node.id, start, end });
           return;
         }
-        case 'stack': {
-          const start = state.index;
-          const size = Struct.sizeOf(node.def);
-
-          const offset = state.stack_offset;
-          state.stack_offset += size;
-          state.stack_entries.push({ def: node.def, offset, id: node.label })
-
-          descendPath(`s`, () => {
-            run(state, node.withStackedValue);
-          })
-
-          state.stack_offset -= size;
-          const end = state.index;
-          state.stack_spans.push({ start, end, id: `stack:${node.label}` });
+        case 'data':
+          state.data_blocks.push(node);
           return;
-        }
         default:
           const _: never = node;
           throw new Error(`Cannot generate code for node: "${(node as IL).type}"`)

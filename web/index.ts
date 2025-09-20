@@ -3,7 +3,6 @@ import { Fragment, h, render } from 'preact';
 import { assemble } from '../compiler/link/assemble';
 import { DataTable } from './components/DataTable';
 import { StructTable } from './components/StructTable';
-import { prelude_struct_def } from '../compiler/link/prelude';
 import { useEffect, useState } from 'preact/hooks';
 import { createClock, createCPU, createMemory } from 'hardware';
 import { loadExecutable } from 'operating_system';
@@ -41,11 +40,13 @@ const App = () => {
   const [snapshots, setSnapshot] = useState<HardwareSnapshot[]>([]);
   const [snapshotIndex, setSnapshotIndex] = useState(0);
 
-  const saveSnapshot = () => {
-    if (cpu.registers.state.read() !== 3)
-      return;
-    if (cpu.registers.instruction_state.read() !== 0)
-      return;
+  const saveSnapshot = (force = false) => {
+    if (!force) {
+      if (cpu.registers.state.read() !== 3)
+        return;
+      if (cpu.registers.instruction_state.read() !== 0)
+        return;
+    }
     
     const snapshot = captureSnapshot(cpu, memory);
     
@@ -53,6 +54,8 @@ const App = () => {
   };
 
   useEffect(() => {
+    saveSnapshot(true);
+    return;
     const id = setInterval(() => {
       saveSnapshot();
       clock.tick();
@@ -78,7 +81,7 @@ const App = () => {
       h('pre', {}, h('code', {}, program_text)),
       h('pre', {}, h('code', {}, debug.exec_debug.instructions.map(i => JSON.stringify(i) + '\n'))),
       h(DataTable, { values: exe.memory }),
-      h(StructTable, { struct_def: prelude_struct_def, values: exe.memory.slice(0, Struct.sizeOf(prelude_struct_def))  }),
+      //h(StructTable, { struct_def: prelude_struct_def, values: exe.memory.slice(0, Struct.sizeOf(prelude_struct_def))  }),
     ]),
     h('div', {}, snapshots.length),
     h('div', { style: { display: 'flex', flex: 1, overflow: 'hidden' } }, [

@@ -1,6 +1,8 @@
 import { Word } from "isa"
 
+export type VariableID = string;
+
 export type Variable = {
-  id: string,
+  id: VariableID,
   value: Word
 }

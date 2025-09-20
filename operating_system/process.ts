@@ -12,7 +12,7 @@ export const loadExecutable = (cpu: CPU, memory: Memory, executable: Executable)
   cpu.registers.instruction_address.write(executable.start);
   cpu.registers.instruction_cache_offset.write(0);
 
-  // setup general purpose registes
+  // setup general purpose registers
   cpu.registers.general_purpose[0].write(executable.state.general_purpose_registers[0]);
   cpu.registers.general_purpose[1].write(executable.state.general_purpose_registers[1]);
   cpu.registers.general_purpose[2].write(executable.state.general_purpose_registers[2]);
