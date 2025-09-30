@@ -4,6 +4,7 @@ import { useState } from "preact/hooks";
 import { CompilerDebug } from 'compiler';
 import { ASTRender } from "./ASTRender";
 import { ILRender } from "./ILRender";
+import { OpCodeViewer } from "./OpCodeViewer";
 
 const code_viewer_modes = [
   'source',
@@ -19,9 +20,13 @@ export type CodeViewerProps = {
   debug: CompilerDebug,
   
   instruction_index: number,
+
+
+  breakpoints: Set<number>,
+  onToggleBreakpoint?: (breakpoint: number) => void,
 };
 
-export const CodeViewer = ({ debug, instruction_index }: CodeViewerProps) => {
+export const CodeViewer = ({ debug, instruction_index, breakpoints, onToggleBreakpoint }: CodeViewerProps) => {
   const [mode, setMode] = useState<CodeViewerMode>('source');
 
   const onModeInput = (e: InputEvent) => {
@@ -46,9 +51,6 @@ export const CodeViewer = ({ debug, instruction_index }: CodeViewerProps) => {
       root: debug.il,
       instruction_index,
     }),
-    mode === 'instructions' && h('pre', {}, debug.exec_debug.instructions.map((instr, index) =>
-      h('div', { style: { fontWeight: index === instruction_index ? 'bold' : 'normal' } },
-        JSON.stringify(instr))
-    ))
+    mode === 'instructions' && h(OpCodeViewer, { instruction_index, debug, breakpoints, onToggleBreakpoint })
   ]);
 };

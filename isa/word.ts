@@ -5,3 +5,8 @@
  * "number" primitive.
  */
 export type Word = number;
+
+/**
+ * A "Buffer" is just an arbitrary array of Word values
+ */
+export type Buffer = Word[];

@@ -4,7 +4,7 @@ export type AST = AST.Program;
 
 export namespace AST {
   export type Common = {
-    node_id?: string,
+    node_id: string,
     //token_span: { start: number, end: number },
   }
 

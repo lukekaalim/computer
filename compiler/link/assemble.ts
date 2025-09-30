@@ -75,8 +75,10 @@ export const assemble = (
     instructions,
     variable_map,
     spans,
+    data_table,
 
     program_start: 0,
+    data_start: program_size,
     stack_start: free_memory_start,
     heap_start: free_memory_start + stack_size,
   }

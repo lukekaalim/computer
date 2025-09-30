@@ -1,4 +1,5 @@
 import { allocateStackMemory, IL, ProgramSetup, Struct } from "../mod";
+import { id } from "../utils";
 
 /**
  * Allocate a Struct in the Stack Memory
@@ -15,5 +16,6 @@ export const allocateStackStruct = (
   program: ProgramSetup,
   output_rid: IL.InstructionArg
 ): IL.Node => {
-  return allocateStackMemory(program, output_rid, IL.arg.literal(struct.fields.length))
+  return IL.label(id("allocate_stack_struct"),
+    allocateStackMemory(program, output_rid, IL.arg.literal(struct.fields.length)))
 }

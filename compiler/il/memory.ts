@@ -1,4 +1,5 @@
 import { VariableID } from "../codegen/variables";
+import { id } from "../utils";
 import { IL } from "./nodes";
 
 /**
@@ -8,7 +9,7 @@ import { IL } from "./nodes";
  * @returns 
  */
 export const writeValue = (address_id: VariableID, value_rid: IL.InstructionArg) => {
-  return IL.autoBorrowRegister(address_rid => IL.autoBorrowRegister(value_rid => IL.list([
+  return IL.label(id('writeValue'), IL.autoBorrowRegister(address_rid => IL.list([
     IL.instruction('register.put', {
       value: IL.arg.reference(address_id),
       output: address_rid,

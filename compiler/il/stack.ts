@@ -1,4 +1,5 @@
 import { Struct } from "../struct/mod";
+import { id } from "../utils";
 import { ProgramSetup } from "./climb";
 import { IL } from "./nodes";
 
@@ -19,12 +20,12 @@ export const allocateStackMemory = (
   output_rid: IL.InstructionArg,
   size: IL.Expression = IL.expr.literal(1),
 ): IL.Node => {
-  return IL.list([
+  return IL.label(id('allocate_stack_memory'), IL.list([
     IL.autoBorrowRegister(next_free_pointer_rid => IL.list([
       // Read the current value of the stack pointer from memory
       // (and write it into the output register, as this doubles as the
       // address of whatever we allocate)
-      readFromStaticAddress(IL.arg.reference(program.stack_pointer_id), output_rid),
+      readFromStaticAddress(program.stack_pointer_id, output_rid),
       // Get the size of the allocation, and put it into the temp register
       IL.instruction('register.put', {
         value: size,
@@ -37,16 +38,55 @@ export const allocateStackMemory = (
         right: next_free_pointer_rid,
         output: next_free_pointer_rid,
       }),
-      IL.instruction('memory.write', {
-        value: next_free_pointer_rid,
-        address: IL.arg.reference(program.stack_pointer_id),
-      }),
+      // Replace the old stack pointer with our newly calculated one
       writeToStaticAddress(program.stack_pointer_id, next_free_pointer_rid),
     ]))
-  ]);
+  ]));
 }
 
-const writeToStaticAddress = (addressId: string, value_rid: IL.InstructionArg) => {
+/**
+ * Moves the stack pointer back by $size amount
+ * @param program 
+ * @param size 
+ */
+export const freeStackMemory = (
+  program: ProgramSetup,
+  size: IL.Expression = IL.expr.literal(1),
+) => {
+  return IL.label('deallocate_stack_memory',
+    IL.autoBorrowRegister(stack_pointer_address_rid =>
+    IL.autoBorrowRegister(stack_value_rid =>
+    IL.list([
+      // Read the current value of the stack pointer from memory
+      // (and write it into the output register, as this doubles as the
+      // address of whatever we allocate)
+      readFromStaticAddress(program.stack_pointer_id, stack_pointer_address_rid),
+      IL.instruction('register.put', {
+        value: size,
+        output: stack_value_rid,
+      }),
+      // Flip the value to a negative
+      IL.autoBorrowRegister(negative_value => IL.list([
+        IL.instruction('register.put', {
+          value: IL.arg.literal(-1),
+          output: negative_value,
+        }),
+        IL.instruction('math.multiply', {
+          left: negative_value,
+          right: stack_value_rid,
+          output: stack_value_rid,
+        }),
+      ])),
+      IL.instruction('math.add', {
+        left: stack_value_rid,
+        right: stack_pointer_address_rid,
+        output: stack_pointer_address_rid,
+      }),
+      writeToStaticAddress(program.stack_pointer_id, stack_pointer_address_rid),
+  ]))));
+}
+
+export const writeToStaticAddress = (addressId: string, value_rid: IL.InstructionArg) => {
   return IL.autoBorrowRegister(address_rid => IL.list([
     IL.instruction('register.put', {
       value: IL.arg.reference(addressId),
@@ -59,10 +99,10 @@ const writeToStaticAddress = (addressId: string, value_rid: IL.InstructionArg) =
   ]))
 }
 
-const readFromStaticAddress = (address: IL.InstructionArg, output_rid: IL.InstructionArg) => {
+export const readFromStaticAddress = (address_id: string, output_rid: IL.InstructionArg) => {
   return IL.list([
     IL.instruction('register.put', {
-      value: address,
+      value: IL.arg.reference(address_id),
       output: output_rid,
     }),
     IL.instruction('memory.read', {

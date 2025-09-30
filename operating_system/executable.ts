@@ -1,6 +1,8 @@
+import { Buffer } from '../isa';
+
 export type Executable = {
   start: number,
-  memory: number[],
+  memory: Buffer,
 
   state: {
     general_purpose_registers: {

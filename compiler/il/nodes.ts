@@ -107,6 +107,19 @@ export namespace IL {
     const register_id = id('borrow_register');
     return borrowRegister(register_id, withRegister(IL.arg.reference(register_id)));
   }
+  export const autoBorrowRegisters = <T extends InstructionArg[]>(
+    count: T["length"],
+    withRegisters: (...register_ids: T) => Node
+  ): Node  => {
+    const register_ids = Array.from({ length: count })
+      .map(() => id("borrow_register"));
+    
+    let node = withRegisters(...register_ids.map(id => IL.arg.reference(id)) as T);
+    for (let i = 0; i < count; i++) {
+      node = borrowRegister(register_ids[i], node);
+    }
+    return node;
+  }
 
   /**
    * Jump to a new code routine.

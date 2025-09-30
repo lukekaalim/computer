@@ -32,7 +32,7 @@ namespace TokenStream {
         index++;
         return tokens[index];
       },
-      assert(type, test) {
+      assert<T extends Token.Any["type"]>(type: T, test?: (token: Extract<Token.Any, { type: T}>) => boolean): Extract<Token.Any, { type: T}> {
         const token = stream.read()
         if (token.type !== type)
           throw new Error();
@@ -105,8 +105,8 @@ export const parseTokens = (tokens: Token.Any[]) => {
       const token = readNextToken()
       if (token.type === 'syntax' && token.syntax === ';')
         break;
-      if (token.type === 'newline')
-        break;
+      //if (token.type === 'newline')
+      //  break;
 
       switch (token.type) {
         case 'primitive':
@@ -173,7 +173,6 @@ export const parseTokens = (tokens: Token.Any[]) => {
     return firstSuccess([
       () => stream.tryFork(stream => tryReadDeclaration(stream))
     ]);
-
 
     const token = readNextToken();
     switch (token.type) {

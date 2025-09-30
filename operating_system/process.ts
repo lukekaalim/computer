@@ -1,6 +1,13 @@
 import { CPU, Memory } from "hardware";
 import { Executable } from "./executable";
 
+/**
+ * A user-space executable is loaded into 
+ * 
+ * @param cpu 
+ * @param memory 
+ * @param executable 
+ */
 export const loadExecutable = (cpu: CPU, memory: Memory, executable: Executable) => {
   // layout memory
   memory.contents.length = 0;
