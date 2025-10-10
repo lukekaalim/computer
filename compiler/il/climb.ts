@@ -232,16 +232,23 @@ const generateExpressionIL = (
 
         ]);
       case 'expression:identifier': {
-        return IL.list([]);
-        const is_local =
-          setup.current_scope_struct.fields.includes(expression.text);
+        //const is_local =
+        //  setup.current_scope_struct.fields.includes(expression.text);
         
-        const scope_struct = is_local ? setup.current_scope_struct : setup.global_struct;
+        //const scope_struct = is_local ? setup.current_scope_struct : setup.global_struct;
 
-        return IL.list([
-          //putStackFieldAddress(scope_struct.name, scope_struct, expression.text, dest_rid),
-          IL.instruction('memory.read', { address: dest_rid, output: dest_rid })
-        ])
+        return IL.autoBorrowRegisters(2, (a, b) => IL.list([
+          IL.instruction('register.put', { value: IL.arg.reference(setup.global_pointer_id), output: a }),
+          // a now has the pointer to the global struct
+          IL.instruction('memory.read', { address: a, output: a }),
+          IL.instruction('register.put', { value: IL.arg.literal(
+            Struct.fieldOffset(setup.global_struct, expression.text)
+          ), output: b }),
+          IL.instruction('math.add', { left: a, right: b, output: a }),
+          // A now has the value
+          IL.instruction('memory.read', { address: a, output: a }),
+          writeValue(a),
+        ]))
       }
       default:
         throw new Error(`Can't compile expression of type: "${expression.type}"`);
